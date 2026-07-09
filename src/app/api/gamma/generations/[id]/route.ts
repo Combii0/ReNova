@@ -6,11 +6,11 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const apiKey = process.env.GAMMA_API_KEY;
+  const apiKey = process.env.GEMMA_API_KEY;
 
   if (!apiKey) {
     return NextResponse.json(
-      { error: "Missing GAMMA_API_KEY environment variable." },
+      { error: "Missing GEMMA_API_KEY environment variable." },
       { status: 500 },
     );
   }
@@ -25,4 +25,3 @@ export async function GET(
   const data = await response.json().catch(() => ({}));
   return NextResponse.json(data, { status: response.status });
 }
-
