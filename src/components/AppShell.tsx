@@ -37,10 +37,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)]">
       <header className="sticky top-0 z-30 border-b border-[var(--app-border)] bg-[var(--app-surface)]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="flex w-full items-center gap-3 px-2 py-3 sm:px-3 lg:px-4">
           <button
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--app-text)] transition hover:bg-[var(--app-soft)]"
+            type="button"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[var(--app-text)] transition hover:bg-[var(--app-soft)]"
             onClick={() => setIsMenuOpen(true)}
+            aria-expanded={isMenuOpen}
             aria-label="Abrir menu"
           >
             <Menu size={24} strokeWidth={2.5} />
@@ -90,6 +92,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {isMenuOpen ? (
         <button
+          type="button"
           className="fixed inset-0 z-40 bg-black/35"
           onClick={() => setIsMenuOpen(false)}
           aria-label="Cerrar menu"
@@ -112,6 +115,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </span>
           </Link>
           <button
+            type="button"
             className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--app-soft)]"
             onClick={() => setIsMenuOpen(false)}
             aria-label="Cerrar menu"
