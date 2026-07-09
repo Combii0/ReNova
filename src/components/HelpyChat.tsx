@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { Bot, PackagePlus, Send, Sparkles } from "lucide-react";
+import { FormEvent, useEffect, useState } from "react";
+import { Bot, Send} from "lucide-react";
 
 type Message = {
   id: string;
@@ -9,18 +9,11 @@ type Message = {
   text: string;
 };
 
-const prompts = [
-  "Quiero comprar comida para una reunion",
-  "Necesito vender un producto usado",
-  "Busco la opcion mas barata y rapida",
-  "Recomiendame productos saludables",
-];
-
 const initialMessages: Message[] = [
   {
     id: "welcome",
     role: "assistant",
-    text: "Puedo ayudarte a elegir productos por presupuesto, tiempo de entrega, calidad o necesidad. Tambien puedo guiarte para vender algo en ReNova.",
+    text: "¡Hola! Soy Helpy, tu asistente de ReNova.",
   },
 ];
 
@@ -31,6 +24,30 @@ export default function HelpyChat() {
     string | null
   >(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(()=>{
+    const saved = localStorage.getItem('renova-helpy-messages');
+    if(saved){
+      setMessages(JSON.parse(saved));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('renova-helpy-messages', JSON.stringify(messages));
+  }, [messages]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('renova-helpy-interaction-id');
+    if (saved) {
+      setPreviousInteractionId(saved);
+    }
+  }, []);
+  useEffect(() => {
+    if (previousInteractionId) {
+      localStorage.setItem('renova-helpy-interaction-id', previousInteractionId);
+    }
+  }, [previousInteractionId])
+
 
   async function sendMessage(rawMessage: string) {
     const message = rawMessage.trim();
@@ -46,7 +63,7 @@ export default function HelpyChat() {
     };
 
     setMessages((current) => [...current, userMessage]);
-    setInput("");
+    setInput('');
     setIsLoading(true);
 
     try {
@@ -102,8 +119,8 @@ export default function HelpyChat() {
   }
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[1fr_360px]">
-      <div className="rounded-[1.5rem] bg-[var(--app-surface)] p-5 shadow-sm ring-1 ring-[var(--app-border)]">
+    <section className='flex h-full w-full flex-col bg-[var(--app-surface)]'>
+      <div className='flex h-full min-h-0 flex-col'>
         <div className="flex items-center gap-3">
           <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand)] text-white">
             <Bot size={24} />
@@ -118,7 +135,7 @@ export default function HelpyChat() {
           </div>
         </div>
 
-        <div className="mt-6 flex min-h-[420px] flex-col gap-3 rounded-3xl bg-[var(--app-soft)] p-4">
+        <div className='flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-[var(--app-soft)] p-4'>
           {messages.map((message) => (
             <div
               key={message.id}
@@ -140,7 +157,7 @@ export default function HelpyChat() {
         </div>
 
         <form
-          className="mt-4 flex gap-3 rounded-full bg-[var(--app-soft)] p-2"
+          className='flex gap-4 border-t border-[var(--app-border)] bg-[var(--app-surface)] p-4'
           onSubmit={handleSubmit}
         >
           <input
@@ -160,50 +177,6 @@ export default function HelpyChat() {
           </button>
         </form>
       </div>
-
-      <aside className="space-y-4">
-        <div className="rounded-[1.5rem] bg-[var(--app-surface)] p-5 shadow-sm ring-1 ring-[var(--app-border)]">
-          <div className="flex items-center gap-3">
-            <Sparkles size={20} className="text-[var(--brand)]" />
-            <h2 className="text-lg font-black text-[var(--app-text)]">
-              Compras
-            </h2>
-          </div>
-          <div className="mt-4 space-y-2">
-            {prompts.map((prompt) => (
-              <button
-                key={prompt}
-                className="w-full rounded-2xl bg-[var(--app-soft)] px-4 py-3 text-left text-sm font-black text-[var(--app-text)] disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={isLoading}
-                onClick={() => void sendMessage(prompt)}
-                type="button"
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-[1.5rem] bg-[var(--app-surface)] p-5 shadow-sm ring-1 ring-[var(--app-border)]">
-          <div className="flex items-center gap-3">
-            <PackagePlus size={20} className="text-[var(--brand)]" />
-            <h2 className="text-lg font-black text-[var(--app-text)]">
-              Ventas
-            </h2>
-          </div>
-          <button
-            className="mt-4 h-12 w-full rounded-full bg-[var(--app-text)] text-sm font-black text-[var(--app-bg)]"
-            type="button"
-            onClick={() =>
-              void sendMessage(
-                "Quiero vender un producto en ReNova. Guiame paso a paso.",
-              )
-            }
-          >
-            Subir producto
-          </button>
-        </div>
-      </aside>
     </section>
   );
 }
