@@ -12,11 +12,10 @@ export default function Home() {
                   ReNova Express
                 </p>
                 <h1 className="mt-3 max-w-xl text-4xl font-black leading-tight sm:text-5xl">
-                  Todo lo que suban tus tiendas, en un solo lugar.
+                  Haz que cada objeto tenga una nueva historia...
                 </h1>
                 <p className="mt-4 max-w-2xl text-base font-medium leading-7 text-white/85">
-                  Descubre productos disponibles, compara precios y agrega al
-                  carrito desde la vista principal.
+                  ¡Dales otra vida hoy!
                 </p>
               </div>
 
