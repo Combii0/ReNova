@@ -3,25 +3,25 @@
 :root {
   --background: var(--app-bg);
   --foreground: var(--app-text);
-  --app-bg: #f7f7f5;
-  --app-surface: #ffffff;
-  --app-soft: #f0f0ec;
-  --app-text: #202124;
-  --app-muted: #71717a;
-  --app-border: rgb(32 33 36 / 0.08);
-  --brand: #ff4b2b;
-  --brand-soft: rgb(255 75 43 / 0.1);
+  --app-bg: #e6e6e6;
+  --app-surface: #f3f4f1;
+  --app-soft: #bac8b1;
+  --app-text: #404e3b;
+  --app-muted: #6c8480;
+  --app-border: rgb(64 78 59 / 0.16);
+  --brand: #7b9669;
+  --brand-soft: rgb(123 150 105 / 0.16);
 }
 
 [data-theme="dark"] {
-  --app-bg: #111111;
-  --app-surface: #1b1b1b;
-  --app-soft: #262626;
-  --app-text: #f7f7f5;
-  --app-muted: #a1a1aa;
-  --app-border: rgb(255 255 255 / 0.09);
-  --brand: #ff6347;
-  --brand-soft: rgb(255 99 71 / 0.16);
+  --app-bg: #404e3b;
+  --app-surface: #33402f;
+  --app-soft: #4d5d47;
+  --app-text: #e6e6e6;
+  --app-muted: #bac8b1;
+  --app-border: rgb(230 230 230 / 0.12);
+  --brand: #bac8b1;
+  --brand-soft: rgb(186 200 177 / 0.16);
 }
 
 @theme inline {
