@@ -121,20 +121,6 @@ export default function HelpyChat() {
   return (
     <section className='flex h-full w-full flex-col bg-[var(--app-surface)]'>
       <div className='flex h-full min-h-0 flex-col'>
-        <div className="flex items-center gap-3">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand)] text-white">
-            <Bot size={24} />
-          </span>
-          <div>
-            <p className="text-sm font-bold uppercase tracking-wide text-[var(--brand)]">
-              Helpy
-            </p>
-            <h1 className="text-3xl font-black text-[var(--app-text)]">
-              Asistente IA
-            </h1>
-          </div>
-        </div>
-
         <div className='flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-[var(--app-soft)] p-4'>
           {messages.map((message) => (
             <div
