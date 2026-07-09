@@ -41,7 +41,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[var(--app-text)] transition hover:bg-[var(--app-soft)]"
-            onClick={() => setIsMenuOpen(true)}
+            onClick={() => setIsMenuOpen((open) => !open)}
             aria-expanded={isMenuOpen}
             aria-label="Abrir menu"
           >
