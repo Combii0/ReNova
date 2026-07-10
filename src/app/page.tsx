@@ -2,16 +2,16 @@ import { categories, products } from "@/data/products";
 
 export default function Home() {
   return (
-    <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_320px] lg:px-8">
+    <main className="mx-auto grid w-full max-w-7xl gap-4 px-3 py-4 sm:gap-5 sm:px-4 sm:py-5 lg:grid-cols-[minmax(0.1fr)_320px] lg:gap-6 lg:px-6 xl:px-8">
       <section className="min-w-0">
         <div className="overflow-hidden rounded-[2rem] bg-[var(--brand)] text-white shadow-sm">
-          <div className="grid gap-6 p-6 sm:grid-cols-[1.3fr_0.7fr] sm:p-8">
+          <div className="grid gap-5 p-4 sm:p-6 md:grid-cols-[1.3fr_0.7fr] lg:p-8">
             <div className="flex flex-col justify-between gap-8">
               <div>
                 <p className="text-sm font-bold uppercase tracking-wide text-white/80">
                   ReNova Express
                 </p>
-                <h1 className="mt-3 max-w-xl text-4xl font-black leading-tight sm:text-5xl">
+                <h1 className="mt-3 max-w-xl text-3xl font-black leading-tight sm:text-4xl lg: text-5xl">
                   Haz que cada objeto tenga una nueva historia...
                 </h1>
                 <p className="mt-4 max-w-2xl text-base font-medium leading-7 text-white/85">
@@ -19,24 +19,24 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-3">
-                <button className="h-11 rounded-full bg-white px-5 text-sm font-black text-[var(--brand)] shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <button className="h-11 w-full rounded-full bg-white px-5 text-sm font-black text-[var(--brand)] shadow-sm sm:w-auto">
                   Ver productos
                 </button>
-                <button className="h-11 rounded-full border border-white/35 px-5 text-sm font-black text-white">
+                <button className="h-11 w-full rounded-full border border-white/35 px-5 text-sm font-black text-white sm:w-auto">
                   Tiendas cercanas
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 self-end">
+            <div className="grid grid-cols-2 gap-2 self-end sm:gap-3">
               {[
                 ["🥑", "Mercado fresco"],
                 ["🍔", "Comida rapida"],
                 ["💊", "Farmacia"],
                 ["📱", "Tecnologia"],
               ].map(([icon, label]) => (
-                <div key={label} className="rounded-3xl bg-white/16 p-4">
+                <div key={label} className="rounded-3xl bg-white/16 p-3 sm:rounded 3xl sm:p-4">
                   <p className="text-3xl">{icon}</p>
                   <p className="mt-4 text-sm font-bold">{label}</p>
                 </div>
@@ -74,7 +74,7 @@ export default function Home() {
           </button>
         </div>
 
-        <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {products.map((product) => (
             <article
               key={product.name}
@@ -132,7 +132,7 @@ export default function Home() {
       </section>
 
       <aside className="lg:sticky lg:top-24 lg:h-fit">
-        <div className="rounded-[1.5rem] bg-[var(--app-surface)] p-5 shadow-sm ring-1 ring-[var(--app-border)]">
+        <div className="rounded-[1.5rem] bg-[var(--app-surface)] p-4 shadow-sm ring-1 ring-[var(--app-border)] sm:p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-black text-[var(--app-text)]">
               Mi pedido

@@ -36,8 +36,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)]">
-      <header className="sticky top-0 z-30 border-b border-[var(--app-border)] bg-[var(--app-surface)]/95 backdrop-blur">
-        <div className="flex w-full items-center gap-3 px-2 py-3 sm:px-3 lg:px-4">
+      <header className="sticky top-0 z-[70] border-b border-[var(--app-border)] bg-[var(--app-surface)]/95 backdrop-blur">
+        <div className="flex w-full items-center gap-2 px-2 py-3 sm:gap-3 sm:px-3 lg:px-4">
           <button
             type="button"
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[var(--app-text)] transition hover:bg-[var(--app-soft)]"
@@ -45,13 +45,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             aria-expanded={isMenuOpen}
             aria-label="Abrir menu"
           >
-            <Menu size={24} strokeWidth={2.5} />
+            <Menu size={24} strokeWidth={2.5}/>
           </button>
 
           <Link
             href="/"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--brand)] text-lg font-black text-white shadow-sm"
-            aria-label="Ir a Market"
+            className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--brand)] text-lg font-black text-white shadow-sm sm:flex"
           >
             R
           </Link>
@@ -87,20 +86,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
       </header>
-
-      {children}
+      <div className="realtive z-0">
+        {children}
+      </div>
 
       {isMenuOpen ? (
         <button
           type="button"
-          className="fixed inset-0 z-40 bg-black/35"
+          className="fixed inset-0 z-[80] bg-black/35"
           onClick={() => setIsMenuOpen(false)}
           aria-label="Cerrar menu"
         />
       ) : null}
 
       <aside
-        className={`fixed left-0 top-0 z-50 flex h-dvh w-[min(88vw,340px)] flex-col bg-[var(--app-surface)] px-4 py-4 shadow-2xl transition-transform duration-200 ${
+        className={`fixed left-0 top-0 z-[90] flex h-dvh w-[min(88vw,340px)] flex-col bg-[var(--app-surface)] px-4 py-4 shadow-2xl transition-transform duration-200 ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         aria-label="Menu principal"
@@ -155,15 +155,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               pathname === "/configuracion"
                 ? "bg-[var(--app-text)] text-[var(--app-bg)]"
                 : "text-[var(--app-text)] hover:bg-[var(--app-soft)]"
-            }`}
-          >
-            <Settings size={19} />
+            }`}>
+            <Settings size={19}/>
             Configuracion
           </Link>
-          <div className="mt-3 flex items-center gap-2 rounded-2xl bg-[var(--app-soft)] px-4 py-3 text-xs font-bold text-[var(--app-muted)]">
-            <SlidersHorizontal size={16} />
-            Ajustes locales
-          </div>
         </div>
       </aside>
     </div>

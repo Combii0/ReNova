@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
-import { Bot, Send} from "lucide-react";
+import{FormEvent, useEffect, useState} from "react";
+import{Send} from "lucide-react";
 
 type Message = {
   id: string;
@@ -18,12 +18,12 @@ const initialMessages: Message[] = [
 ];
 
 export default function HelpyChat() {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [input, setInput] = useState("");
-  const [previousInteractionId, setPreviousInteractionId] = useState<
+  const[messages, setMessages] = useState<Message[]>(initialMessages);
+  const[input, setInput] = useState("");
+  const[previousInteractionId, setPreviousInteractionId] = useState<
     string | null
   >(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const[isLoading, setIsLoading] = useState(false);
 
   useEffect(()=>{
     const saved = localStorage.getItem('renova-helpy-messages');
@@ -137,7 +137,7 @@ export default function HelpyChat() {
 
           {isLoading ? (
             <div className="max-w-[220px] rounded-3xl bg-[var(--app-surface)] p-4 text-sm font-black text-[var(--app-muted)] shadow-sm">
-              Helpy esta pensando...
+              ...
             </div>
           ) : null}
         </div>
