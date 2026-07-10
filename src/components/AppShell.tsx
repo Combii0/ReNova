@@ -59,7 +59,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               Entrega en
             </span>
             <button className="flex items-center gap-1 text-sm font-bold text-[var(--app-text)]">
-              Medellin, Colombia <span aria-hidden>⌄</span>
+              Bogotá, Colombia <span aria-hidden>⌄</span>
             </button>
           </div>
 
