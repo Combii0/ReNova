@@ -13,7 +13,6 @@ import {
   Search,
   Settings,
   ShoppingCart,
-  SlidersHorizontal,
   X,
 } from "lucide-react";
 import { applyTheme, getCookie, type AppTheme } from "@/lib/cookies";

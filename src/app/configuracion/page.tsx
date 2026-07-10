@@ -9,7 +9,7 @@ export default function SettingsPage() {
           Configuracion
         </p>
         <h1 className="mt-1 text-3xl font-black text-[var(--app-text)]">
-          Preferencias
+          ¡Las mejores opciones únicamente para ti!
         </h1>
       </div>
 
