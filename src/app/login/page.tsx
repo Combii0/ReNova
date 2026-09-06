@@ -40,13 +40,13 @@ export default function LoginPage() {
     <main className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-6 px-4 py-12">
       <div className="text-center">
         <h1 className="text-3xl font-black text-[var(--app-text)]">Bienvenido</h1>
-        <p className="mt-2 text-sm text-[var(--app-muted)]">Inicia sesiÃ³n en tu cuenta ReNova</p>
+        <p className="mt-2 text-sm text-[var(--app-muted)]">Inicia sesión en tu cuenta ReNova</p>
       </div>
 
       <form onSubmit={handleSubmit} className="w-full space-y-4 rounded-2xl bg-[var(--app-surface)] p-6 shadow-sm ring-1 ring-[var(--app-border)]">
         <div>
           <label htmlFor="email" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
-            Correo electrÃ³nico
+            Correo electrónico
           </label>
           <input
             id="email"
@@ -55,13 +55,13 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
-            placeholder="tu@correo.com"
+            placeholder="ejemplo@correo.com"
           />
         </div>
 
         <div>
           <label htmlFor="password" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
-            ContraseÃ±a
+            Contraseña
           </label>
           <input
             id="password"
@@ -70,7 +70,7 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
-            placeholder="â¢â¢â¢â¢â¢â¢â¢â¢"
+            placeholder="Contraseña"
           />
         </div>
 
@@ -83,7 +83,7 @@ export default function LoginPage() {
           disabled={loading}
           className="w-full rounded-full bg-[var(--app-text)] py-3 text-sm font-black text-[var(--app-bg)] shadow-sm transition hover:opacity-90 disabled:opacity-50"
         >
-          {loading ? "Iniciando sesiÃ³n..." : "Iniciar sesiÃ³n"}
+          {loading ? "Iniciando sesión..." : "Iniciar sesión"}
         </button>
 
         <div className="relative">
@@ -105,9 +105,9 @@ export default function LoginPage() {
       </form>
 
       <p className="text-sm text-[var(--app-muted)]">
-        Â¿No tienes cuenta?{" "}
+        ¿No tienes cuenta?{" "}
         <a href="/register" className="font-bold text-[var(--brand)] hover:underline">
-          RegÃ­strate
+          Regístrate
         </a>
       </p>
     </main>

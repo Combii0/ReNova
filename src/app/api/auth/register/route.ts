@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { setDoc, doc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { encrypt } from "@/lib/crypto";
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const user = userCredential.user;
 
     // Update display name
-    await user.updateProfile({ displayName: displayName || email.split("@")[0] });
+    await updateProfile(user, { displayName: displayName || email.split("@")[0] });
 
     // Encrypt PII before storing in Firestore
     const userData: Record<string, unknown> = {
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email already registered" }, { status: 409 });
     }
     if (code.includes("weak-password")) {
-      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+      return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
     }
     console.error("Registration error:", error);
     return NextResponse.json({ error: "Registration failed" }, { status: 500 });

@@ -19,7 +19,7 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
     try {
-      void registerClient(email, password, displayName);
+      await registerClient(email, password, displayName);
       // Save encrypted PII to Firestore
       await fetch("/api/users/me", {
         method: "PATCH",
@@ -49,7 +49,7 @@ export default function RegisterPage() {
     <main className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-6 px-4 py-12">
       <div className="text-center">
         <h1 className="text-3xl font-black text-[var(--app-text)]">Crea tu cuenta</h1>
-        <p className="mt-2 text-sm text-[var(--app-muted)]">Ãnete a ReNova y empieza a comprar</p>
+        <p className="mt-2 text-sm text-[var(--app-muted)]">Únete a ReNova y empieza a comprar</p>
       </div>
 
       <form onSubmit={handleSubmit} className="w-full space-y-4 rounded-2xl bg-[var(--app-surface)] p-6 shadow-sm ring-1 ring-[var(--app-border)]">
@@ -70,7 +70,7 @@ export default function RegisterPage() {
 
         <div>
           <label htmlFor="email" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
-            Correo electrÃ³nico
+            Correo electrónico
           </label>
           <input
             id="email"
@@ -79,13 +79,13 @@ export default function RegisterPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
-            placeholder="tu@correo.com"
+            placeholder="ejemplo@correo.com"
           />
         </div>
 
         <div>
           <label htmlFor="password" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
-            ContraseÃ±a
+            Contraseña
           </label>
           <input
             id="password"
@@ -95,13 +95,13 @@ export default function RegisterPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
-            placeholder="mÃ­nimo 6 caracteres"
+            placeholder="Mínimo 8 caracteres"
           />
         </div>
 
         <div>
           <label htmlFor="phone" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
-            TelÃ©fono (opcional, se encriptarÃ¡)
+            Teléfono (opcional)
           </label>
           <input
             id="phone"
@@ -109,13 +109,13 @@ export default function RegisterPage() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
-            placeholder="+57 300 555 0198"
+            placeholder="+57 123 456 7890"
           />
         </div>
 
         <div>
           <label htmlFor="address" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
-            DirecciÃ³n (opcional, se encriptarÃ¡)
+            Dirección (opcional)
           </label>
           <input
             id="address"
@@ -123,7 +123,7 @@ export default function RegisterPage() {
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
-            placeholder="Cra 76 #32-18, AptÃ©"
+            placeholder="Cra 76 #32-18, Apto 301, Bogotá, Colombia"
           />
         </div>
 
@@ -158,9 +158,9 @@ export default function RegisterPage() {
       </form>
 
       <p className="text-sm text-[var(--app-muted)]">
-        Â¿Ya tienes cuenta?{" "}
+        ¿Ya tienes cuenta?{" "}
         <a href="/login" className="font-bold text-[var(--brand)] hover:underline">
-          Inicia sesiÃ³n
+          Inicia sesión
         </a>
       </p>
     </main>

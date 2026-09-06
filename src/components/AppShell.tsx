@@ -145,7 +145,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <div className="realtive z-0">
+      <div className="relative z-0">
         {children}
       </div>
 

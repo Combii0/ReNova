@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   createUserWithEmailAndPassword,
+  updateProfile,
   signInWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
@@ -36,7 +37,7 @@ export async function registerClient(
 ): Promise<FirebaseUser> {
   if (!auth) throw new Error("Firebase auth not configured");
   const cred = await createUserWithEmailAndPassword(auth, email, password);
-  await cred.user.updateProfile({ displayName });
+  await updateProfile(cred.user, { displayName });
   return cred.user;
 }
 
