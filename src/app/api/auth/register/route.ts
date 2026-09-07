@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { setDoc, doc } from "firebase/firestore";
+import { setDoc, doc, Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { encrypt } from "@/lib/crypto";
 
@@ -25,12 +25,13 @@ export async function POST(req: NextRequest) {
     await updateProfile(user, { displayName: displayName || email.split("@")[0] });
 
     // Encrypt PII before storing in Firestore
+    const now = Timestamp.now();
     const userData: Record<string, unknown> = {
       uid: user.uid,
       email: user.email,
       displayName: user.displayName,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
       role: "user" as const,
     };
 

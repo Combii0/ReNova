@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { encrypt, decrypt } from "@/lib/crypto";
 
@@ -37,7 +37,7 @@ export async function PATCH(req: NextRequest) {
   if (body.address) updateData.address = encrypt(body.address);
   if (body.displayName) updateData.displayName = body.displayName;
 
-  updateData.updatedAt = new Date().toISOString();
+  updateData.updatedAt = Timestamp.now();
 
   await setDoc(doc(db, "users", userId), updateData, { merge: true });
 
@@ -69,7 +69,10 @@ export async function GET(req: NextRequest) {
     email: data.email,
     displayName: data.displayName,
     role: data.role ?? "user",
-    createdAt: data.createdAt,
+    createdAt:
+      data.createdAt instanceof Timestamp
+        ? data.createdAt.toDate().toISOString()
+        : data.createdAt,
   };
 
   if (data.phone) {
