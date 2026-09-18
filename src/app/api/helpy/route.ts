@@ -7,8 +7,37 @@ type HelpyRequest = {
   previousInteractionId?: string | null;
 };
 
+type GeminiError = {
+  error?: {
+    code?: string;
+    message?: string;
+  };
+};
+
+function helpyErrorMessage(status: number, code?: string) {
+  if (status === 401 || code === "authentication") {
+    return "Helpy no está configurado correctamente. Revisa la clave de Gemini.";
+  }
+
+  if (status === 403 || code === "permission_denied") {
+    return "Helpy no está disponible porque la clave o el proyecto de Gemini no tienen acceso. Crea una clave nueva en Google AI Studio y actualízala en Vercel.";
+  }
+
+  if (status === 404 || code === "not_found" || code === "model_not_found") {
+    return "La conversación anterior ya no está disponible. Reinicia el chat e inténtalo de nuevo.";
+  }
+
+  if (status === 429) {
+    return "Helpy está recibiendo muchas solicitudes. Espera un momento e inténtalo de nuevo.";
+  }
+
+  return "Helpy no pudo responder en este momento. Inténtalo de nuevo.";
+}
+
 export async function POST(request: NextRequest) {
-  const apiKey = process.env.GEMMA_API_KEY ?? process.env.GEMINI_API_KEY;
+  // GEMINI_API_KEY is the current name. GEMMA_API_KEY remains as a temporary
+  // fallback so existing local setups keep working while the Vercel variable is updated.
+  const apiKey = process.env.GEMINI_API_KEY ?? process.env.GEMMA_API_KEY;
 
   if (!apiKey) {
     return NextResponse.json(
@@ -46,27 +75,34 @@ export async function POST(request: NextRequest) {
     }),
   });
 
-  const data = await response.json().catch(() => null);
+  const data = (await response.json().catch(() => null)) as GeminiError | null;
 
   if (!response.ok) {
     return NextResponse.json(
       {
-        error:
-          data?.error?.message ??
-          "Helpy could not generate a response. Try again.",
+        error: helpyErrorMessage(response.status, data?.error?.code),
+        resetConversation:
+          response.status === 404 ||
+          data?.error?.code === "not_found" ||
+          data?.error?.code === "model_not_found",
       },
       { status: response.status },
     );
   }
 
+  const interaction = data as {
+    id?: string;
+    output_text?: string;
+    steps?: { content?: { text?: string }[] }[];
+  };
+
   return NextResponse.json({
-    id: data?.id ?? null,
+    id: interaction.id ?? null,
     text:
-      data?.output_text ??
-      data?.steps?.flatMap((step: { content?: { text?: string }[] }) =>
+      interaction.output_text ??
+      interaction.steps?.flatMap((step) =>
         step.content?.map((item) => item.text).filter(Boolean) ?? [],
       )?.join("\n") ??
       "No pude generar una respuesta.",
   });
 }
-

@@ -9,6 +9,13 @@ type Message = {
   text: string;
 };
 
+type HelpyResponse = {
+  id?: string | null;
+  text?: string;
+  error?: string;
+  resetConversation?: boolean;
+};
+
 const initialMessages: Message[] = [
   {
     id: "welcome",
@@ -78,9 +85,13 @@ export default function HelpyChat() {
         }),
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as HelpyResponse;
 
       if (!response.ok) {
+        if (data.resetConversation) {
+          setPreviousInteractionId(null);
+          localStorage.removeItem('renova-helpy-interaction-id');
+        }
         throw new Error(data.error ?? "No se pudo contactar a Helpy.");
       }
 
@@ -93,7 +104,7 @@ export default function HelpyChat() {
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          text: data.text,
+          text: data.text ?? "No pude generar una respuesta.",
         },
       ]);
     } catch (error) {
@@ -166,4 +177,3 @@ export default function HelpyChat() {
     </section>
   );
 }
-
