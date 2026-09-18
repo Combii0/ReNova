@@ -61,3 +61,9 @@ export async function logoutClient(): Promise<void> {
   if (!auth) return;
   await fbSignOut(auth);
 }
+
+/** Get a fresh ID token string for the given user, or null. */
+export async function getIdToken(user: FirebaseUser | null): Promise<string | null> {
+  if (!user) return null;
+  return user.getIdToken();
+}

@@ -1,6 +1,27 @@
-import { categories, products } from "@/data/products";
+"use client";
+
+import { categories } from "@/data/products";
+import { useFirestoreProducts } from "@/lib/useFirestoreProducts";
 
 export default function Home() {
+  const { products, loading, error } = useFirestoreProducts();
+
+  if (loading) {
+    return (
+      <main className="mx-auto flex min-h-[60vh] w-full max-w-7xl items-center justify-center px-3 py-4 sm:px-4 sm:py-5 lg:px-6">
+        <p className="text-sm font-bold text-[var(--app-muted)]">Cargando productos...</p>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="mx-auto flex min-h-[60vh] w-full max-w-7xl items-center justify-center px-3 py-4 sm:px-4 sm:py-5 lg:px-6">
+        <p className="text-sm font-bold text-red-600">Error: {error}</p>
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto grid w-full max-w-7xl gap-4 px-3 py-4 sm:gap-5 sm:px-4 sm:py-5 lg:grid-cols-[minmax(0.1fr)_320px] lg:gap-6 lg:px-6 xl:px-8">
       <section className="min-w-0">

@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from "next/server";
 import {
   collection,
@@ -7,8 +8,9 @@ import {
   orderBy,
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { encrypt, decrypt } from "@/lib/crypto";
+import { getAdminAuth } from "@/lib/firebaseAdmin";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -17,11 +19,14 @@ async function requireAuth(req: NextRequest): Promise<string | NextResponse> {
   const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // TODO: use firebase-admin in production. For now verify with client auth.
+  const adminAuth = getAdminAuth();
+  if (!adminAuth) {
+    return NextResponse.json({ error: "Firebase admin not configured" }, { status: 500 });
+  }
+
   try {
-    // @ts-expect-error — auth may be null when Firebase config is missing
-    const decoded = await auth?.verifyIdToken(token);
-    if (!decoded) return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
+    const decoded = await adminAuth.verifyIdToken(token);
+    if (!decoded.uid) return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
     return decoded.uid;
   } catch {
     return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
@@ -43,7 +48,33 @@ export async function GET(req: NextRequest) {
 
   // Determine whether admin token is present (TODO: implement role check)
   const authHeader = req.headers.get("authorization");
-  const isAdmin = authHeader?.startsWith("Bearer ");
+  let isAdmin = authHeader?.startsWith("Bearer ");
+
+  if (isAdmin) {
+    const adminAuth = getAdminAuth();
+    if (adminAuth) {
+      try {
+        const token = authHeader!.replace(/^Bearer\s+/i, "");
+        await adminAuth.verifyIdToken(token);
+      } catch {
+        // Token invalid or expired, treat as non-admin
+        isAdmin = false;
+      }
+    }
+  }
+
+  if (isAdmin) {
+    const adminAuth = getAdminAuth();
+    if (adminAuth) {
+      try {
+        const token = authHeader!.replace(/^Bearer\s+/i, "");
+        await adminAuth.verifyIdToken(token);
+      } catch {
+        // Token invalid or expired, treat as non-admin
+        isAdmin = false;
+      }
+    }
+  }
 
   const snapshot = await getDocs(q);
   const products: Record<string, unknown>[] = [];
@@ -92,6 +123,7 @@ export async function POST(req: NextRequest) {
 
   const productData: Record<string, unknown> = {
     ...body,
+    name: body.name.trim(),
     createdBy: uid,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
