@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Bot,
@@ -16,6 +16,8 @@ import {
   X,
 } from "lucide-react";
 import { applyTheme, getCookie, type AppTheme } from "@/lib/cookies";
+import { useUser, logoutClient } from "@/lib/auth";
+import CreateProductModal from "@/components/CreateProductModal";
 
 const navigation = [
   { href: "/", label: "Market", icon: Home },
@@ -26,12 +28,21 @@ const navigation = [
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const user = useUser();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isCreateProductOpen, setIsCreateProductOpen] = useState(false);
 
   useEffect(() => {
     const theme = (getCookie("renova-theme") as AppTheme | null) ?? "light";
     applyTheme(theme);
   }, []);
+
+  // Close profile dropdown when route changes
+  useEffect(() => {
+    setIsProfileOpen(false);
+  }, [pathname]);
 
   return (
     <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)]">
@@ -44,7 +55,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             aria-expanded={isMenuOpen}
             aria-label="Abrir menu"
           >
-            <Menu size={24} strokeWidth={2.5}/>
+            <Menu size={24} strokeWidth={2.5} />
           </button>
 
           <Link
@@ -72,22 +83,88 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             />
           </label>
 
-          <button className="hidden h-11 items-center gap-2 rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-4 text-sm font-bold text-[var(--app-text)] shadow-sm transition hover:bg-[var(--app-soft)] lg:flex">
+          {/* Subir producto button */}
+          <button
+            onClick={() => (user ? setIsCreateProductOpen(true) : router.push("/login"))}
+            className="hidden h-11 items-center gap-2 rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-4 text-sm font-bold text-[var(--app-text)] shadow-sm transition hover:bg-[var(--app-soft)] lg:flex"
+          >
             <PackagePlus size={17} />
             Subir producto
           </button>
 
           <button
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--app-text)] text-[var(--app-bg)] shadow-sm"
-            aria-label="Abrir carrito"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--app-text)] text-[var(--app-bg)] shadow-sm transition hover:opacity-90 lg:flex"
+            disabled
+            aria-label="Carrito desactivado"
           >
             <ShoppingCart size={19} />
           </button>
+
+          {/* Auth button */}
+          {user ? (
+            <div className="relative hidden sm:block">
+              <button
+                onClick={() => setIsProfileOpen((v) => !v)}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-bold text-white shadow-sm transition hover:opacity-90"
+                aria-expanded={isProfileOpen}
+                aria-label="Mi cuenta"
+              >
+                {(user.displayName?.[0] ?? "U").toUpperCase()}
+              </button>
+              {isProfileOpen && (
+                <div className="absolute right-0 top-14 z-[100] w-52 rounded-2xl bg-[var(--app-surface)] p-3 shadow-xl ring-1 ring-[var(--app-border)]">
+                  <p className="truncate text-sm font-black text-[var(--app-text)]">
+                    {user.displayName ?? "Usuario"}
+                  </p>
+                  <p className="truncate text-xs text-[var(--app-muted)]">
+                    {user.email}
+                  </p>
+                  <button
+                    onClick={async () => {
+                      await logoutClient();
+                      setIsProfileOpen(false);
+                    }}
+                    className="mt-2 w-full rounded-xl bg-red-500/10 px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-500/20"
+                  >
+                    Cerrar sesión
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="hidden h-10 items-center rounded-full bg-[var(--brand)] px-4 text-sm font-bold text-white shadow-sm transition hover:opacity-90 sm:flex"
+            >
+              Iniciar sesión
+            </Link>
+          )}
+
+          {/* Mobile auth button */}
+          <div className="sm:hidden">
+            {user ? (
+              <button
+                onClick={async () => {
+                  await logoutClient();
+                }}
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--app-border)] text-sm font-bold shadow-sm transition hover:bg-[var(--app-soft)]"
+                title="Cerrar sesión"
+              >
+                ⏻
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                className="flex h-11 items-center justify-center gap-1 rounded-full border border-[var(--app-border)] px-3 text-sm font-bold shadow-sm transition hover:bg-[var(--app-soft)]"
+              >
+                Iniciar sesión
+              </Link>
+            )}
+          </div>
         </div>
       </header>
-      <div className="realtive z-0">
-        {children}
-      </div>
+
+      <div className="relative z-0">{children}</div>
 
       {isMenuOpen ? (
         <button
@@ -146,7 +223,47 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className="mt-auto border-t border-[var(--app-border)] pt-4">
+        {/* User section */}
+        {user ? (
+          <div className="mt-auto border-t border-[var(--app-border)] pt-4">
+            <div className="flex items-center gap-3 rounded-2xl bg-[var(--app-soft)] px-4 py-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-bold text-white">
+                {(user.displayName?.[0] ?? "U").toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-black text-[var(--app-text)]">
+                  {user.displayName ?? "Usuario"}
+                </p>
+                <p className="truncate text-xs text-[var(--app-muted)]">
+                  {user.email}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                await logoutClient();
+                setIsMenuOpen(false);
+              }}
+              className="mt-3 flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-red-600 transition hover:bg-red-500/10"
+            >
+              <Settings size={19} />
+              Cerrar sesión
+            </button>
+          </div>
+        ) : (
+          <div className="mt-auto border-t border-[var(--app-border)] pt-4">
+            <Link
+              href="/login"
+              onClick={() => setIsMenuOpen(false)}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--brand)] px-4 text-sm font-black text-white shadow-sm transition hover:opacity-90"
+            >
+              Iniciar sesión
+            </Link>
+          </div>
+        )}
+
+        {/* Config button (always visible) */}
+        <div className="mt-2 border-t border-[var(--app-border)] pt-4">
           <Link
             href="/configuracion"
             onClick={() => setIsMenuOpen(false)}
@@ -154,12 +271,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               pathname === "/configuracion"
                 ? "bg-[var(--app-text)] text-[var(--app-bg)]"
                 : "text-[var(--app-text)] hover:bg-[var(--app-soft)]"
-            }`}>
-            <Settings size={19}/>
+            }`}
+          >
+            <Settings size={19} />
             Configuracion
           </Link>
         </div>
       </aside>
+
+      {/* Modal for creating products */}
+      {isCreateProductOpen && user && (
+        <CreateProductModal
+          user={user}
+          onClose={() => setIsCreateProductOpen(false)}
+        />
+      )}
     </div>
   );
 }

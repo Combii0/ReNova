@@ -40,9 +40,13 @@ Dale otra vida.
 - Tailwind CSS
 - Vercel
 - Firebase
+<<<<<<< HEAD
 - Gemini API
 
 ## Environment variables
 
 `NEXT_PUBLIC_FIREBASE_*` variables are used by Firebase in the browser.
 `GEMINI_API_KEY` is used only by Next.js API routes and must never be exposed in the browser. `GEMMA_API_KEY` remains as a temporary fallback for existing installations.
+=======
+- Gamma API
+>>>>>>> nico-database-integration
