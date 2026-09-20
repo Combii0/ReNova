@@ -10,7 +10,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { encrypt, decrypt } from "@/lib/crypto";
-import { getAdminAuth } from "@/lib/firebaseAdmin";
+import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -46,31 +46,19 @@ export async function GET(req: NextRequest) {
     q = query(q, orderBy(orderField as string));
   }
 
-  // Determine whether admin token is present (TODO: implement role check)
   const authHeader = req.headers.get("authorization");
-  let isAdmin = authHeader?.startsWith("Bearer ");
+  let isAdmin = false;
 
-  if (isAdmin) {
+  if (authHeader?.startsWith("Bearer ")) {
     const adminAuth = getAdminAuth();
-    if (adminAuth) {
+    const adminDb = getAdminDb();
+    if (adminAuth && adminDb) {
       try {
-        const token = authHeader!.replace(/^Bearer\s+/i, "");
-        await adminAuth.verifyIdToken(token);
+        const token = authHeader.replace(/^Bearer\s+/i, "");
+        const decoded = await adminAuth.verifyIdToken(token);
+        const userDoc = await adminDb.collection("users").doc(decoded.uid).get();
+        isAdmin = userDoc.data()?.role === "admin";
       } catch {
-        // Token invalid or expired, treat as non-admin
-        isAdmin = false;
-      }
-    }
-  }
-
-  if (isAdmin) {
-    const adminAuth = getAdminAuth();
-    if (adminAuth) {
-      try {
-        const token = authHeader!.replace(/^Bearer\s+/i, "");
-        await adminAuth.verifyIdToken(token);
-      } catch {
-        // Token invalid or expired, treat as non-admin
         isAdmin = false;
       }
     }
@@ -115,7 +103,12 @@ export async function POST(req: NextRequest) {
   const uid = await requireAuth(req);
   if (typeof uid === "object") return uid; // already a 401 response
 
-  const body = await req.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
 
   if (!body.name || !body.price) {
     return NextResponse.json({ error: "name and price are required" }, { status: 400 });
@@ -123,14 +116,14 @@ export async function POST(req: NextRequest) {
 
   const productData: Record<string, unknown> = {
     ...body,
-    name: body.name.trim(),
+    name: (body.name as string).trim(),
     createdBy: uid,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
 
   if (body.specifications) {
-    productData.specifications = encrypt(body.specifications);
+    productData.specifications = encrypt(body.specifications as string);
   }
 
   delete productData["encryptedDescription"]; // legacy

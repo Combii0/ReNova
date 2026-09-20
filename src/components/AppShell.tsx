@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { applyTheme, getCookie, type AppTheme } from "@/lib/cookies";
 import { useUser, logoutClient } from "@/lib/auth";
+import CreateProductModal from "@/components/CreateProductModal";
+import { useRouter } from "next/navigation";
 
 const navigation = [
   { href: "/", label: "Market", icon: Home },
@@ -30,6 +32,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const user = useUser();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isCreateProductOpen, setIsCreateProductOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const theme = (getCookie("renova-theme") as AppTheme | null) ?? "light";
@@ -81,13 +85,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </label>
 
           {/* Subir producto button */}
-          <Link
-            href="/publicar"
+          <button
+            onClick={() => (user ? setIsCreateProductOpen(true) : router.push("/login"))}
             className="hidden h-11 items-center gap-2 rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-4 text-sm font-bold text-[var(--app-text)] shadow-sm transition hover:bg-[var(--app-soft)] lg:flex"
           >
             <PackagePlus size={17} />
             Subir producto
-          </Link>
+          </button>
 
           <button
             className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--app-text)] text-[var(--app-bg)] shadow-sm transition hover:opacity-90 lg:flex"

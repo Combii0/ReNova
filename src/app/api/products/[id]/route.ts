@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { doc, updateDoc, deleteDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { encrypt, decrypt } from "@/lib/crypto";
+import { requireAdmin } from "@/lib/adminAuth";
 
 // ── GET single product ─────────────────────────────────────────────────────
 
@@ -39,13 +40,15 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   if (!db) return NextResponse.json({ error: "Firebase not configured" }, { status: 500 });
+
+  const uid = await requireAdmin(req);
+  if (typeof uid === "object") return uid;
+
   const { id } = await params;
 
-  // Check auth (simplified — in production validate Bearer token)
   const body = await req.json();
   const updateData: Record<string, unknown> = { ...body, updatedAt: new Date().toISOString() };
 
-  // Encrypt sensitive fields
   if (body.encryptedDescription) updateData.encryptedDescription = encrypt(body.encryptedDescription);
   if (body.specifications) updateData.specifications = encrypt(body.specifications);
 
@@ -56,10 +59,14 @@ export async function PATCH(
 // ── DELETE product ─────────────────────────────────────────────────────────
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   if (!db) return NextResponse.json({ error: "Firebase not configured" }, { status: 500 });
+
+  const uid = await requireAdmin(req);
+  if (typeof uid === "object") return uid;
+
   const { id } = await params;
   await deleteDoc(doc(db, "products", id));
   return NextResponse.json({ success: true });
