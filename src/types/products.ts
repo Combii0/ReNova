@@ -7,4 +7,5 @@ export type Product = {
   rating: string;
   image: string;
   tone: string;
+  expirationDate?: string;
 };

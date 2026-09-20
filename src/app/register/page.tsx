@@ -23,7 +23,7 @@ export default function RegisterPage() {
     try {
       const newUser = await registerClient(email, password, displayName);
       const token = await getIdToken(newUser);
-      await fetch("/api/users/me", {
+      const meRes = await fetch("/api/users/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -33,6 +33,7 @@ export default function RegisterPage() {
           address: address || undefined,
         }),
       });
+      if (!meRes.ok) throw new Error("No se pudo guardar tu perfil");
       router.push("/");
       router.refresh();
     } catch (err: unknown) {

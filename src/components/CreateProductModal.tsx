@@ -21,6 +21,7 @@ export default function CreateProductModal({
   const [category, setCategory] = useState(categories[1]);
   const [image, setImage] = useState(emojiOptions[0]);
   const [description, setDescription] = useState("");
+  const [expirationDate, setExpirationDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -102,13 +103,13 @@ export default function CreateProductModal({
             <div className="grid grid-cols-2 gap-3">
               <input
                 required
-                placeholder="Precio ($42.900)"
+                placeholder="Precio"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)]"
               />
               <input
-                placeholder="Precio anterior"
+                placeholder="Precio original"
                 value={before}
                 onChange={(e) => setBefore(e.target.value)}
                 className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)]"
@@ -155,13 +156,30 @@ export default function CreateProductModal({
               </div>
             </div>
 
-            <textarea
-              placeholder="Descripción breve (opcional)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
-            />
+            <div>
+              <p 
+                className="mb-2 text-xs font-bold text-[var(--app-muted)]">
+                  Descripción breve (opcional)
+              </p>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={2}
+                className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
+              />
+            </div>
+
+            <div>
+              <p className="mb-2 text-xs font-bold text-[var(--app-muted)]">
+                Fecha de vencimiento (opcional)
+              </p>
+              <input
+                type="date"
+                value={expirationDate}
+                onChange={(e) => setExpirationDate(e.target.value)}
+                className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)]"
+              />
+            </div>
 
             {error && <p className="text-sm font-semibold text-red-500">{error}</p>}
 

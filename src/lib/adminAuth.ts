@@ -38,7 +38,8 @@ export async function requireSocio(req: NextRequest): Promise<string | NextRespo
   try {
     const decoded = await adminAuth.verifyIdToken(token);
     const userDoc = await adminDb.collection("users").doc(decoded.uid).get();
-    if (userDoc.data()?.role !== "socio") {
+    const role = userDoc.data()?.role;
+    if (role !== "socio" && role !== "admin") {
       return NextResponse.json({ error: "Solo los socios pueden publicar productos" }, { status: 403 });
     }
     return decoded.uid;
