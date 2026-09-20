@@ -11,7 +11,8 @@ import {
   onAuthStateChanged,
   User as FirebaseUser,
 } from "firebase/auth";
-import { auth } from "./firebase";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { auth, db } from "./firebase";
 
 export type User = FirebaseUser | null;
 
@@ -28,7 +29,7 @@ export function useUser(): User {
   return user;
 }
 
-// ── Client-side helpers (call from API routes or useEffect) ────────────────
+// ── Client-side helpers ───────────────────────────────────────────────────
 
 export async function registerClient(
   email: string,
@@ -36,8 +37,21 @@ export async function registerClient(
   displayName: string,
 ): Promise<FirebaseUser> {
   if (!auth) throw new Error("Firebase auth not configured");
+
   const cred = await createUserWithEmailAndPassword(auth, email, password);
   await updateProfile(cred.user, { displayName });
+
+  if (db) {
+    await setDoc(doc(db, "users", cred.user.uid), {
+      uid: cred.user.uid,
+      email: cred.user.email,
+      displayName,
+      role: "comprador",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
   return cred.user;
 }
 
@@ -54,6 +68,14 @@ export async function googleLoginClient(): Promise<FirebaseUser> {
   if (!auth) throw new Error("Firebase auth not configured");
   const provider = new GoogleAuthProvider();
   const cred = await signInWithPopup(auth, provider);
+
+  const token = await cred.user.getIdToken();
+  await fetch("/api/users/me", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ displayName: cred.user.displayName, email: cred.user.email }),
+  });
+
   return cred.user;
 }
 

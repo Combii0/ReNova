@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
-import { setDoc, doc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 
 export async function POST(req: NextRequest) {
-  if (!auth || !db) {
+  const adminDb = getAdminDb();
+  if (!auth || !adminDb) {
     return NextResponse.json({ error: "Firebase not configured" }, { status: 500 });
   }
 
@@ -16,7 +17,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email and password required" }, { status: 400 });
     }
 
-    // Try login first
     let userCredential;
     try {
       userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -26,27 +26,21 @@ export async function POST(req: NextRequest) {
         console.error("Login error:", error);
         return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
       }
-      // If user doesn't exist, offer auto-registration with empty PII
       userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      await setDoc(doc(db, "users", user.uid), {
+      await adminDb.collection("users").doc(user.uid).set({
         uid: user.uid,
         email: user.email,
         displayName: user.displayName || email.split("@")[0],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        role: "user" as const,
+        role: "comprador" as const,
       }, { merge: true });
     }
 
     const user = userCredential.user;
-
     return NextResponse.json({
-      user: {
-        id: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-      },
+      user: { id: user.uid, email: user.email, displayName: user.displayName },
     });
   } catch (error: unknown) {
     console.error("Login error:", error);

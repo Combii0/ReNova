@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Bot,
@@ -18,7 +18,6 @@ import {
 import { applyTheme, getCookie, type AppTheme } from "@/lib/cookies";
 import { useUser, logoutClient } from "@/lib/auth";
 import CreateProductModal from "@/components/CreateProductModal";
-import { useRouter } from "next/navigation";
 
 const navigation = [
   { href: "/", label: "Market", icon: Home },
@@ -29,11 +28,11 @@ const navigation = [
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const user = useUser();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isCreateProductOpen, setIsCreateProductOpen] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     const theme = (getCookie("renova-theme") as AppTheme | null) ?? "light";
@@ -279,6 +278,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
         </div>
       </aside>
+
+      {/* Modal for creating products */}
+      {isCreateProductOpen && user && (
+        <CreateProductModal
+          user={user}
+          onClose={() => setIsCreateProductOpen(false)}
+        />
+      )}
     </div>
   );
 }

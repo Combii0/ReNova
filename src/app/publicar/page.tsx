@@ -4,15 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser, getIdToken } from "@/lib/auth";
+import { categories } from "@/data/products";
 
-const tones = [
-  { label: "Verde", value: "from-emerald-100 to-lime-50" },
-  { label: "Naranja", value: "from-orange-100 to-amber-50" },
-  { label: "Celeste", value: "from-sky-100 to-cyan-50" },
-  { label: "Amarillo", value: "from-stone-100 to-yellow-50" },
-  { label: "Morado", value: "from-violet-100 to-slate-50" },
-  { label: "Rosa", value: "from-rose-100 to-orange-50" },
-];
+const emojiOptions = ["🥬", "🥗", "🍔", "☕", "💊", "📱", "🧴", "📦", "🍓", "🥦"];
 
 export default function PublishProductPage() {
   const router = useRouter();
@@ -22,10 +16,8 @@ export default function PublishProductPage() {
   const [store, setStore] = useState("");
   const [price, setPrice] = useState("");
   const [before, setBefore] = useState("");
-  const [tag, setTag] = useState("Nuevo");
-  const [image, setImage] = useState("📦");
-  const [time, setTime] = useState("20 min");
-  const [tone, setTone] = useState(tones[0].value);
+  const [category, setCategory] = useState(categories[1]);
+  const [image, setImage] = useState(emojiOptions[0]);
   const [description, setDescription] = useState("");
   const [expirationDate, setExpirationDate] = useState("");
 
@@ -49,10 +41,9 @@ export default function PublishProductPage() {
         name,
         store,
         price,
-        tag,
+        tag: category,
         image,
-        time,
-        tone,
+        tone: "from-slate-100 to-slate-50",
       };
       if (before) body.before = before;
       if (description) body.specifications = description;
@@ -164,55 +155,41 @@ export default function PublishProductPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div>
-            <label htmlFor="tag" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
-              Etiqueta
-            </label>
-            <input
-              id="tag"
-              value={tag}
-              onChange={(e) => setTag(e.target.value)}
-              className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)]"
-            />
-          </div>
-          <div>
-            <label htmlFor="image" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
-              Icono
-            </label>
-            <input
-              id="image"
-              value={image}
-              onChange={(e) => setImage(e.target.value)}
-              className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-center text-lg outline-none ring-1 focus:ring-[var(--brand)]"
-            />
-          </div>
-          <div>
-            <label htmlFor="time" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
-              Tiempo entrega
-            </label>
-            <input
-              id="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)]"
-            />
+        <div>
+          <label className="mb-1 block text-sm font-bold text-[var(--app-text)]">Categoría</label>
+          <div className="flex flex-wrap gap-2">
+            {categories
+              .filter((c) => c !== "Todos")
+              .map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategory(cat)}
+                  className={`h-10 rounded-full px-4 text-sm font-black ring-1 ring-[var(--app-border)] ${
+                    category === cat
+                      ? "bg-[var(--app-text)] text-[var(--app-bg)]"
+                      : "bg-[var(--app-soft)] text-[var(--app-text)]"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
           </div>
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-bold text-[var(--app-text)]">Color</label>
+          <label className="mb-1 block text-sm font-bold text-[var(--app-text)]">Icono</label>
           <div className="flex flex-wrap gap-2">
-            {tones.map((t) => (
+            {emojiOptions.map((emoji) => (
               <button
-                key={t.value}
+                key={emoji}
                 type="button"
-                onClick={() => setTone(t.value)}
-                className={`h-10 rounded-full bg-gradient-to-br px-4 text-xs font-black text-zinc-700 ring-2 ${t.value} ${
-                   tone === t.value ? "ring-[var(--brand)]" : "ring-transparent"
-                 }`}
+                onClick={() => setImage(emoji)}
+                className={`flex h-11 w-11 items-center justify-center rounded-xl text-lg ring-1 ring-[var(--app-border)] ${
+                  image === emoji ? "bg-[var(--brand)]" : "bg-[var(--app-soft)]"
+                }`}
               >
-                {t.label}
+                {emoji}
               </button>
             ))}
           </div>
@@ -220,13 +197,13 @@ export default function PublishProductPage() {
 
         <div>
           <label htmlFor="description" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
-            Descripción (opcional)
+            Descripción breve (opcional)
           </label>
           <textarea
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            rows={3}
+            rows={2}
             className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
             placeholder="Detalles del producto"
           />

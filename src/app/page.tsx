@@ -135,20 +135,15 @@ export default function Home() {
                   </span>
                 </div>
 
-                <div className="mt-4 flex items-end justify-between gap-3">
-                  <div>
-                    <p className="text-lg font-black text-[var(--app-text)]">
-                      {product.price}
+                <div className="mt-4">
+                  <p className="text-lg font-black text-[var(--app-text)]">
+                    {product.price}
+                  </p>
+                  {product.before && (
+                    <p className="text-xs font-bold text-[var(--app-muted)] line-through">
+                      {product.before}
                     </p>
-                    {product.before && (
-                      <p className="text-xs font-bold text-[var(--app-muted)] line-through">
-                        {product.before}
-                      </p>
-                    )}
-                  </div>
-                  <span className="rounded-full bg-[var(--app-soft)] px-3 py-1 text-xs font-black text-[var(--app-text)]">
-                    {product.time}
-                  </span>
+                  )}
                 </div>
               </div>
             </article>

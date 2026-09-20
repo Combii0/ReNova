@@ -3,17 +3,9 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { getIdToken, type User } from "@/lib/auth";
+import { categories } from "@/data/products";
 
-const toneOptions = [
-  { value: "from-emerald-100 to-lime-50", label: "Verde" },
-  { value: "from-orange-100 to-amber-50", label: "Naranja" },
-  { value: "from-sky-100 to-cyan-50", label: "Azul" },
-  { value: "from-stone-100 to-yellow-50", label: "Beige" },
-  { value: "from-violet-100 to-slate-50", label: "Violeta" },
-  { value: "from-rose-100 to-orange-50", label: "Rosa" },
-  { value: "from-blue-100 to-indigo-50", label: "Indigo" },
-  { value: "from-red-100 to-pink-50", label: "Rojo" },
-];
+const emojiOptions = ["🥬", "🥗", "🍔", "☕", "💊", "📱", "🧴", "📦", "🍓", "🥦"];
 
 export default function CreateProductModal({
   user,
@@ -26,10 +18,9 @@ export default function CreateProductModal({
   const [store, setStore] = useState("");
   const [price, setPrice] = useState("");
   const [before, setBefore] = useState("");
-  const [tag, setTag] = useState("Nuevo");
-  const [time, setTime] = useState("20 min");
-  const [image, setImage] = useState("📦");
-  const [tone, setTone] = useState(toneOptions[0].value);
+  const [category, setCategory] = useState(categories[1]);
+  const [image, setImage] = useState(emojiOptions[0]);
+  const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -52,11 +43,11 @@ export default function CreateProductModal({
           store,
           price,
           before,
-          tag,
+          tag: category,
           rating: "5.0",
-          time,
           image,
-          tone,
+          tone: "from-slate-100 to-slate-50",
+          specifications: description || undefined,
         }),
       });
 
@@ -123,37 +114,54 @@ export default function CreateProductModal({
                 className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)]"
               />
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <input
-                placeholder="Etiqueta"
-                value={tag}
-                onChange={(e) => setTag(e.target.value)}
-                className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)]"
-              />
-              <input
-                placeholder="Tiempo"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)]"
-              />
-              <input
-                placeholder="Emoji"
-                value={image}
-                onChange={(e) => setImage(e.target.value)}
-                className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-center text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)]"
-              />
+
+            <div>
+              <p className="mb-2 text-xs font-bold text-[var(--app-muted)]">Categoría</p>
+              <div className="flex flex-wrap gap-2">
+                {categories
+                  .filter((c) => c !== "Todos")
+                  .map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setCategory(cat)}
+                      className={`h-9 rounded-full px-3 text-xs font-black ring-1 ring-[var(--app-border)] ${
+                        category === cat
+                          ? "bg-[var(--app-text)] text-[var(--app-bg)]"
+                          : "bg-[var(--app-soft)] text-[var(--app-text)]"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+              </div>
             </div>
-            <select
-              value={tone}
-              onChange={(e) => setTone(e.target.value)}
-              className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)]"
-            >
-              {toneOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+
+            <div>
+              <p className="mb-2 text-xs font-bold text-[var(--app-muted)]">Icono</p>
+              <div className="flex flex-wrap gap-2">
+                {emojiOptions.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => setImage(emoji)}
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl text-lg ring-1 ring-[var(--app-border)] ${
+                      image === emoji ? "bg-[var(--brand)]" : "bg-[var(--app-soft)]"
+                    }`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <textarea
+              placeholder="Descripción breve (opcional)"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+              className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
+            />
 
             {error && <p className="text-sm font-semibold text-red-500">{error}</p>}
 

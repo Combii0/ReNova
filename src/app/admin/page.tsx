@@ -8,7 +8,7 @@ type AdminUser = {
   uid: string;
   email: string;
   displayName: string;
-  role: "admin" | "user";
+  role: "admin" | "socio" | "comprador";
   phone?: string;
 };
 
@@ -56,7 +56,7 @@ export default function AdminPage() {
     if (res.ok) setProducts((prev) => prev.filter((p) => p.id !== id));
   }
 
-  async function updateRole(uid: string, role: "admin" | "user") {
+  async function updateRole(uid: string, role: "admin" | "socio" | "comprador") {
     const token = await getIdToken(user);
     const res = await fetch(`/api/users/${uid}`, {
       method: "PATCH",
@@ -142,10 +142,11 @@ export default function AdminPage() {
               </div>
               <select
                 value={u.role}
-                onChange={(e) => updateRole(u.uid, e.target.value as "admin" | "user")}
+                onChange={(e) => updateRole(u.uid, e.target.value as "admin" | "socio" | "comprador")}
                 className="rounded-full bg-[var(--app-soft)] px-3 py-2 text-sm font-bold"
               >
-                <option value="user">Usuario</option>
+                <option value="comprador">Comprador</option>
+                <option value="socio">Socio</option>
                 <option value="admin">Admin</option>
               </select>
             </div>

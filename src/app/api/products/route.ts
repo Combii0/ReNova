@@ -1,61 +1,27 @@
-
 import { NextRequest, NextResponse } from "next/server";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  orderBy,
-  type QueryDocumentSnapshot,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { encrypt, decrypt } from "@/lib/crypto";
+import type { Query } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
+import { encrypt, decrypt } from "@/lib/crypto";
+import { requireSocio } from "@/lib/adminAuth";
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-/** Verify bearer token; returns decoded UID or a 401 response. */
-async function requireAuth(req: NextRequest): Promise<string | NextResponse> {
-  const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const adminAuth = getAdminAuth();
-  if (!adminAuth) {
-    return NextResponse.json({ error: "Firebase admin not configured" }, { status: 500 });
-  }
-
-  try {
-    const decoded = await adminAuth.verifyIdToken(token);
-    if (!decoded.uid) return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
-    return decoded.uid;
-  } catch {
-    return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
-  }
-}
-
-// ── GET all products (public list, optional admin decrypt) ──────────────────
+// ── GET all products (público, admin ve campos decriptados) ────────────────
 
 export async function GET(req: NextRequest) {
-  if (!db) return NextResponse.json({ error: "Firebase not configured" }, { status: 500 });
+  const adminDb = getAdminDb();
+  if (!adminDb) return NextResponse.json({ error: "Firebase not configured" }, { status: 500 });
 
-  const searchParams = req.nextUrl.searchParams;
-  const orderField = searchParams.get("orderBy");
-
-  let q = query(collection(db, "products"));
-  if (orderField) {
-    q = query(q, orderBy(orderField as string));
-  }
+  const orderField = req.nextUrl.searchParams.get("orderBy");
+  let queryRef: Query = adminDb.collection("products");
+  if (orderField) queryRef = queryRef.orderBy(orderField);
 
   const authHeader = req.headers.get("authorization");
   let isAdmin = false;
 
   if (authHeader?.startsWith("Bearer ")) {
     const adminAuth = getAdminAuth();
-    const adminDb = getAdminDb();
-    if (adminAuth && adminDb) {
+    if (adminAuth) {
       try {
-        const token = authHeader.replace(/^Bearer\s+/i, "");
-        const decoded = await adminAuth.verifyIdToken(token);
+        const decoded = await adminAuth.verifyIdToken(authHeader.replace(/^Bearer\s+/i, ""));
         const userDoc = await adminDb.collection("users").doc(decoded.uid).get();
         isAdmin = userDoc.data()?.role === "admin";
       } catch {
@@ -64,28 +30,19 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const snapshot = await getDocs(q);
+  const snapshot = await queryRef.get();
   const products: Record<string, unknown>[] = [];
 
-  for (const snap of snapshot.docs as QueryDocumentSnapshot<Record<string, unknown>>[]) {
+  for (const snap of snapshot.docs) {
     const data = snap.data();
     const product: Record<string, unknown> = { id: snap.id, ...data };
 
     if (isAdmin) {
-      // Decrypt sensitive fields for admin view
       if (data.encryptedDescription) {
-        try {
-          product.encryptedDescription = decrypt(data.encryptedDescription as string);
-        } catch {
-          /* skip */
-        }
+        try { product.encryptedDescription = decrypt(data.encryptedDescription as string); } catch { /* skip */ }
       }
       if (data.specifications) {
-        try {
-          product.specifications = decrypt(data.specifications as string);
-        } catch {
-          /* skip */
-        }
+        try { product.specifications = decrypt(data.specifications as string); } catch { /* skip */ }
       }
     }
 
@@ -95,13 +52,14 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(products);
 }
 
-// ── POST create product (admin only) ───────────────────────────────────────
+// ── POST create product (solo socios) ───────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  if (!db) return NextResponse.json({ error: "Firebase not configured" }, { status: 500 });
+  const adminDb = getAdminDb();
+  if (!adminDb) return NextResponse.json({ error: "Firebase not configured" }, { status: 500 });
 
-  const uid = await requireAuth(req);
-  if (typeof uid === "object") return uid; // already a 401 response
+  const uid = await requireSocio(req);
+  if (typeof uid === "object") return uid;
 
   let body: Record<string, unknown>;
   try {
@@ -125,9 +83,8 @@ export async function POST(req: NextRequest) {
   if (body.specifications) {
     productData.specifications = encrypt(body.specifications as string);
   }
-
   delete productData["encryptedDescription"]; // legacy
 
-  const docRef = await addDoc(collection(db, "products"), productData);
+  const docRef = await adminDb.collection("products").add(productData);
   return NextResponse.json({ id: docRef.id, success: true });
 }

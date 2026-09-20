@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { registerClient, googleLoginClient } from "@/lib/auth";
+import Link from "next/link";
+import { registerClient, googleLoginClient, getIdToken } from "@/lib/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -20,12 +21,17 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
     try {
-      await registerClient(email, password, displayName);
-      // Save encrypted PII to Firestore
+      const newUser = await registerClient(email, password, displayName);
+      const token = await getIdToken(newUser);
       await fetch("/api/users/me", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: phone || undefined, address: address || undefined }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          displayName,
+          email: newUser.email,
+          phone: phone || undefined,
+          address: address || undefined,
+        }),
       });
       router.push("/");
       router.refresh();
@@ -42,7 +48,7 @@ export default function RegisterPage() {
       router.push("/");
       router.refresh();
     } catch (err: unknown) {
-      setError((err as Error).message || "Google registration failed");
+      setError((err as Error).message || "Error al registrarse con Google");
     }
   }
 
@@ -53,7 +59,10 @@ export default function RegisterPage() {
         <p className="mt-2 text-sm text-[var(--app-muted)]">Únete a ReNova y empieza a comprar</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="w-full space-y-4 rounded-2xl bg-[var(--app-surface)] p-6 shadow-sm ring-1 ring-[var(--app-border)]">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full space-y-4 rounded-2xl bg-[var(--app-surface)] p-6 shadow-sm ring-1 ring-[var(--app-border)]"
+      >
         <div>
           <label htmlFor="displayName" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
             Nombre completo
@@ -93,7 +102,7 @@ export default function RegisterPage() {
               id="password"
               type={showPassword ? "text" : "password"}
               required
-              minLength={6}
+              minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 pr-10 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
@@ -181,9 +190,9 @@ export default function RegisterPage() {
 
       <p className="text-sm text-[var(--app-muted)]">
         ¿Ya tienes cuenta?{" "}
-        <a href="/login" className="font-bold text-[var(--brand)] hover:underline">
+        <Link href="/login" className="font-bold text-[var(--brand)] hover:underline">
           Inicia sesión
-        </a>
+        </Link>
       </p>
     </main>
   );
