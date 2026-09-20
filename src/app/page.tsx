@@ -129,7 +129,9 @@ export default function Home() {
                     </p>
                   </div>
                   <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-black text-amber-700">
-                    ★ {product.rating}
+                  {product.rating && (
+                    <>★ {product.rating}</>
+                  )}
                   </span>
                 </div>
 
@@ -138,9 +140,11 @@ export default function Home() {
                     <p className="text-lg font-black text-[var(--app-text)]">
                       {product.price}
                     </p>
-                    <p className="text-xs font-bold text-[var(--app-muted)] line-through">
-                      {product.before}
-                    </p>
+                    {product.before && (
+                      <p className="text-xs font-bold text-[var(--app-muted)] line-through">
+                        {product.before}
+                      </p>
+                    )}
                   </div>
                   <span className="rounded-full bg-[var(--app-soft)] px-3 py-1 text-xs font-black text-[var(--app-text)]">
                     {product.time}

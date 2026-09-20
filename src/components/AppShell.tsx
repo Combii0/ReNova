@@ -52,7 +52,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             aria-expanded={isMenuOpen}
             aria-label="Abrir menu"
           >
-            <Menu size={24} strokeWidth={2.5}/>
+            <Menu size={24} strokeWidth={2.5} />
           </button>
 
           <Link
@@ -80,12 +80,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             />
           </label>
 
-          <button className="hidden h-11 items-center gap-2 rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-4 text-sm font-bold text-[var(--app-text)] shadow-sm transition hover:bg-[var(--app-soft)] lg:flex">
+          {/* Subir producto button */}
+          <Link
+            href="/publicar"
+            className="hidden h-11 items-center gap-2 rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-4 text-sm font-bold text-[var(--app-text)] shadow-sm transition hover:bg-[var(--app-soft)] lg:flex"
+          >
             <PackagePlus size={17} />
             Subir producto
-          </button>
+          </Link>
 
-          <button className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--app-text)] text-[var(--app-bg)] shadow-sm transition hover:opacity-90 lg:flex" disabled aria-label="Carrito desactivado">
+          <button
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--app-text)] text-[var(--app-bg)] shadow-sm transition hover:opacity-90 lg:flex"
+            disabled
+            aria-label="Carrito desactivado"
+          >
             <ShoppingCart size={19} />
           </button>
 
@@ -102,12 +110,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </button>
               {isProfileOpen && (
                 <div className="absolute right-0 top-14 z-[100] w-52 rounded-2xl bg-[var(--app-surface)] p-3 shadow-xl ring-1 ring-[var(--app-border)]">
-                  <p className="text-sm font-black text-[var(--app-text)] truncate">
+                  <p className="truncate text-sm font-black text-[var(--app-text)]">
                     {user.displayName ?? "Usuario"}
                   </p>
-                  <p className="truncate text-xs text-[var(--app-muted)]">{user.email}</p>
+                  <p className="truncate text-xs text-[var(--app-muted)]">
+                    {user.email}
+                  </p>
                   <button
-                    onClick={async () => { await logoutClient(); setIsProfileOpen(false); }}
+                    onClick={async () => {
+                      await logoutClient();
+                      setIsProfileOpen(false);
+                    }}
                     className="mt-2 w-full rounded-xl bg-red-500/10 px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-500/20"
                   >
                     Cerrar sesión
@@ -128,7 +141,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div className="sm:hidden">
             {user ? (
               <button
-                onClick={async () => { await logoutClient(); }}
+                onClick={async () => {
+                  await logoutClient();
+                }}
                 className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--app-border)] text-sm font-bold shadow-sm transition hover:bg-[var(--app-soft)]"
                 title="Cerrar sesión"
               >
@@ -145,9 +160,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <div className="relative z-0">
-        {children}
-      </div>
+
+      <div className="relative z-0">{children}</div>
 
       {isMenuOpen ? (
         <button
@@ -214,12 +228,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 {(user.displayName?.[0] ?? "U").toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-black text-[var(--app-text)]">{user.displayName ?? "Usuario"}</p>
-                <p className="truncate text-xs text-[var(--app-muted)]">{user.email}</p>
+                <p className="truncate text-sm font-black text-[var(--app-text)]">
+                  {user.displayName ?? "Usuario"}
+                </p>
+                <p className="truncate text-xs text-[var(--app-muted)]">
+                  {user.email}
+                </p>
               </div>
             </div>
             <button
-              onClick={async () => { await logoutClient(); setIsMenuOpen(false); }}
+              onClick={async () => {
+                await logoutClient();
+                setIsMenuOpen(false);
+              }}
               className="mt-3 flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-red-600 transition hover:bg-red-500/10"
             >
               <Settings size={19} />
@@ -231,7 +252,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <Link
               href="/login"
               onClick={() => setIsMenuOpen(false)}
-              className="flex w-full h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--brand)] px-4 text-sm font-black text-white shadow-sm transition hover:opacity-90"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--brand)] px-4 text-sm font-black text-white shadow-sm transition hover:opacity-90"
             >
               Iniciar sesión
             </Link>
@@ -239,7 +260,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Config button (always visible) */}
-        <div className="border-t border-[var(--app-border)] pt-4 mt-2">
+        <div className="mt-2 border-t border-[var(--app-border)] pt-4">
           <Link
             href="/configuracion"
             onClick={() => setIsMenuOpen(false)}
@@ -247,8 +268,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               pathname === "/configuracion"
                 ? "bg-[var(--app-text)] text-[var(--app-bg)]"
                 : "text-[var(--app-text)] hover:bg-[var(--app-soft)]"
-            }`}>
-            <Settings size={19}/>
+            }`}
+          >
+            <Settings size={19} />
             Configuracion
           </Link>
         </div>
