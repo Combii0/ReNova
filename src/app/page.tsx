@@ -57,7 +57,7 @@ export default function Home() {
                 ["💊", "Farmacia"],
                 ["📱", "Tecnologia"],
               ].map(([icon, label]) => (
-                <div key={label} className="rounded-3xl bg-white/16 p-3 sm:rounded 3xl sm:p-4">
+                <div key={label} className="rounded-3xl bg-white/16 p-3 sm:rounded-3xl sm:p-4">
                   <p className="text-3xl">{icon}</p>
                   <p className="mt-4 text-sm font-bold">{label}</p>
                 </div>
