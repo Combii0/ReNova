@@ -17,10 +17,11 @@ export default function AccountSettings() {
   const user = useUser();
 
   const [displayName, setDisplayName] = useState("");
-  const [age, setAge] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [addressOk, setAddressOk] = useState(true);
+  const [placeId, setPlaceId] = useState("");
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -45,8 +46,8 @@ export default function AccountSettings() {
 
       const data = await res.json();
       setDisplayName(data.displayName ?? "");
-      setAge(data.age ? String(data.age) : "");
-      setPhone(data.phone ?? "");
+      setBirthDate(data.birthDate ?? "");
+      setPhone((data.phone ?? "").replace(/\D/g, "").replace(/^57/, ""));
       setAddress(data.address ?? "");
       setAddressOk(true);
     })();
@@ -58,6 +59,10 @@ export default function AccountSettings() {
     setError("");
     setMessage("");
 
+    if (phone && !/^3\d{9}$/.test(phone)) {
+      setError("Escribe un celular colombiano válido (10 dígitos que empiecen por 3).");
+      return;
+    }
     if (!addressOk) {
       setError("Selecciona una dirección de la lista de sugerencias.");
       return;
@@ -69,20 +74,20 @@ export default function AccountSettings() {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({
         displayName,
-        age: age || undefined,
+        birthDate: birthDate || undefined,
         phone: phone || undefined,
-        address: address || undefined,
+        placeId: placeId || undefined,
       }),
     });
 
+    const data = await res.json();
     if (!res.ok) {
-      const data = await res.json();
       setError(data.error ?? "No se pudo guardar");
       return;
     }
 
     if (displayName) await updateProfile(user, { displayName });
-    setMessage("Datos guardados.");
+    setMessage(data.role === "socio" ? "Datos guardados. Ya eres socio." : "Datos guardados.");
   }
 
   async function changeCredentials(e: React.FormEvent) {
@@ -166,20 +171,40 @@ export default function AccountSettings() {
           <input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className={field} />
         </div>
         <div>
-          <label htmlFor="age" className={label}>Edad</label>
-          <input id="age" type="number" min={1} max={120} value={age} onChange={(e) => setAge(e.target.value)} className={field} />
+          <label htmlFor="birthDate" className={label}>Fecha de nacimiento</label>
+          <input
+            id="birthDate"
+            type="date"
+            max={new Date().toISOString().slice(0, 10)}
+            value={birthDate}
+            onChange={(e) => setBirthDate(e.target.value)}
+            className={field}
+          />
         </div>
         <div>
-          <label htmlFor="phone" className={label}>Teléfono</label>
-          <input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={field} placeholder="+57 123 456 7890" />
+          <label htmlFor="phone" className={label}>Celular</label>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-black text-[var(--app-text)]">+57</span>
+            <input
+              id="phone"
+              type="tel"
+              inputMode="numeric"
+              maxLength={10}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+              className={field}
+              placeholder="300 123 4567"
+            />
+          </div>
         </div>
         <div>
           <label className={label}>Dirección</label>
           <AddressInput
             value={address}
-            onChange={(text, ok) => {
+            onChange={(text, ok, id) => {
               setAddress(text);
               setAddressOk(ok);
+              setPlaceId(id ?? "");
             }}
           />
         </div>

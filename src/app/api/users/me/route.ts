@@ -3,6 +3,19 @@ import { Timestamp } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
 import { encrypt, decrypt } from "@/lib/crypto";
 
+function ageFromBirthDate(birthDate: string) {
+  const birth = new Date(birthDate);
+  const now = new Date();
+  let age = now.getUTCFullYear() - birth.getUTCFullYear();
+  if (
+    now.getUTCMonth() < birth.getUTCMonth() ||
+    (now.getUTCMonth() === birth.getUTCMonth() && now.getUTCDate() < birth.getUTCDate())
+  ) {
+    age--;
+  }
+  return age;
+}
+
 async function requireUserId(
   req: NextRequest,
   allowIfNoProfile = false,
@@ -48,17 +61,50 @@ export async function PATCH(req: NextRequest) {
   const existing = await userRef.get();
 
   const updateData: Record<string, unknown> = {};
-  if (body.phone) updateData.phone = encrypt(body.phone);
-  if (body.address) updateData.address = encrypt(body.address);
   if (body.displayName) updateData.displayName = body.displayName;
   if (body.email) updateData.email = body.email;
-  if (body.age) {
-    const age = Number(body.age);
-    if (!Number.isInteger(age) || age < 1 || age > 120) {
-      return NextResponse.json({ error: "Edad no válida" }, { status: 400 });
+
+  // Teléfono: celular colombiano (10 dígitos que empiezan por 3), se guarda como +57XXXXXXXXXX
+  if (body.phone) {
+    const digits = String(body.phone).replace(/\D/g, "").replace(/^57/, "");
+    if (!/^3\d{9}$/.test(digits)) {
+      return NextResponse.json({ error: "Teléfono no válido" }, { status: 400 });
     }
-    updateData.age = age;
+    updateData.phone = encrypt(`+57${digits}`);
   }
+
+  if (body.birthDate) {
+    const birth = new Date(body.birthDate);
+    const validDate = !isNaN(birth.getTime()) && birth.toISOString().slice(0, 10) === body.birthDate;
+    const age = validDate ? ageFromBirthDate(body.birthDate) : -1;
+    if (age < 0 || age > 120) {
+      return NextResponse.json({ error: "Fecha de nacimiento no válida" }, { status: 400 });
+    }
+    updateData.birthDate = body.birthDate;
+  }
+
+  // Dirección: se valida con Google y se guarda la que devuelve Google
+  if (body.placeId) {
+    const place = await fetch(
+      `https://places.googleapis.com/v1/places/${encodeURIComponent(body.placeId)}`,
+      {
+        headers: {
+          "X-Goog-Api-Key": process.env.GOOGLE_MAPS_API_KEY!,
+          "X-Goog-FieldMask": "formattedAddress,addressComponents",
+        },
+      },
+    ).then((r) => (r.ok ? r.json() : null));
+
+    const isColombia = place?.addressComponents?.some(
+      (c: { types: string[]; shortText: string }) =>
+        c.types.includes("country") && c.shortText === "CO",
+    );
+    if (!isColombia) {
+      return NextResponse.json({ error: "Dirección no válida" }, { status: 400 });
+    }
+    updateData.address = encrypt(place.formattedAddress);
+  }
+
   updateData.updatedAt = Timestamp.now();
 
   if (!existing.exists) {
@@ -67,17 +113,17 @@ export async function PATCH(req: NextRequest) {
     updateData.createdAt = Timestamp.now();
   }
 
-  // Opción A: mayor de 18 con teléfono guardado pasa a socio
+  // Pasa a socio: mayor de 18 y con teléfono guardado
   const current = existing.data();
-  const finalAge = Number(updateData.age ?? current?.age);
+  const birthDate = (updateData.birthDate ?? current?.birthDate) as string | undefined;
   const hasPhone = updateData.phone || current?.phone;
   const currentRole = current?.role ?? "comprador";
-  if (finalAge >= 18 && hasPhone && currentRole === "comprador") {
+  if (birthDate && ageFromBirthDate(birthDate) >= 18 && hasPhone && currentRole === "comprador") {
     updateData.role = "socio";
   }
 
   await userRef.set(updateData, { merge: true });
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, role: updateData.role ?? currentRole });
 }
 
 // ── GET perfil (autenticado) ─────────────────────────────────────────────────
@@ -102,6 +148,7 @@ export async function GET(req: NextRequest) {
   };
 
   if (data.age) response.age = data.age;
+  if (data.birthDate) response.birthDate = data.birthDate;
   if (data.phone) {
     try { response.phone = decrypt(data.phone as string); } catch { response.phone = "[encrypted]"; }
   }

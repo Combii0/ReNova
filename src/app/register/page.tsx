@@ -4,23 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  registerClient,
   googleLoginClient,
-  getIdToken,
-  logoutClient,
-  requestCodeClient,
-  verifyCodeClient,
+  requestRegisterCodeClient,
+  verifyRegisterCodeClient,
 } from "@/lib/auth";
-import AddressInput from "@/components/AddressInput";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [addressOk, setAddressOk] = useState(false);
   const [step, setStep] = useState<"form" | "code">("form");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,37 +24,21 @@ export default function RegisterPage() {
     e.preventDefault();
     setError("");
 
-    if (step === "form" && address && !addressOk) {
-      setError("Selecciona tu dirección de la lista de sugerencias.");
-      return;
-    }
-
     setLoading(true);
     try {
       if (step === "code") {
-        await verifyCodeClient(email, code);
+        await verifyRegisterCodeClient(email, code);
         router.push("/");
         router.refresh();
         return;
       }
 
-      const newUser = await registerClient(email, password, displayName);
-      const token = await getIdToken(newUser);
-      const meRes = await fetch("/api/users/me", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          displayName,
-          email: newUser.email,
-          phone: phone || undefined,
-          address: address || undefined,
-        }),
+      await requestRegisterCodeClient({
+        displayName,
+        email,
+        password,
       });
-      if (!meRes.ok) throw new Error("No se pudo guardar tu perfil");
-
-      await logoutClient();
       setStep("code");
-      await requestCodeClient(email, password);
     } catch (err: unknown) {
       setError((err as Error).message || "Registration failed");
     } finally {
@@ -72,7 +49,11 @@ export default function RegisterPage() {
   async function resendCode() {
     setError("");
     try {
-      await requestCodeClient(email, password);
+      await requestRegisterCodeClient({
+        displayName,
+        email,
+        password,
+      });
     } catch (err: unknown) {
       setError((err as Error).message || "No se pudo enviar el código");
     }
@@ -160,33 +141,6 @@ export default function RegisterPage() {
                   />
                 </button>
               </div>
-            </div>
-
-            <div>
-              <label htmlFor="phone" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
-                Teléfono (opcional)
-              </label>
-              <input
-                id="phone"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
-                placeholder="+57 123 456 7890"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-bold text-[var(--app-text)]">
-                Dirección (opcional)
-              </label>
-              <AddressInput
-                value={address}
-                onChange={(text, ok) => {
-                  setAddress(text);
-                  setAddressOk(ok);
-                }}
-              />
             </div>
           </>
         )}

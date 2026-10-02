@@ -31,19 +31,6 @@ export function useUser(): User {
 
 // ── Client-side helpers ───────────────────────────────────────────────────
 
-export async function registerClient(
-  email: string,
-  password: string,
-  displayName: string,
-): Promise<FirebaseUser> {
-  if (!auth) throw new Error("Firebase auth not configured");
-
-  const cred = await createUserWithEmailAndPassword(auth, email, password);
-  await updateProfile(cred.user, { displayName });
-
-  return cred.user;
-}
-
 /** Paso 1 del login: valida correo y contraseña y envía el código por correo. */
 export async function requestCodeClient(email: string, password: string): Promise<void> {
   const res = await fetch("/api/auth/2fa/request", {
@@ -83,6 +70,37 @@ export async function googleLoginClient(): Promise<FirebaseUser> {
     body: JSON.stringify({ displayName: cred.user.displayName, email: cred.user.email }),
   });
 
+  return cred.user;
+}
+
+export async function requestRegisterCodeClient(data: {
+  displayName: string;
+  email: string;
+  password: string;
+  phone?: string;
+  address?: string;
+}): Promise<void> {
+  const res = await fetch("/api/auth/register/request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const body = await res.json();
+    throw new Error(body.error ?? "No se pudo enviar el código");
+  }
+}
+
+export async function verifyRegisterCodeClient(email: string, code: string): Promise<FirebaseUser> {
+  if (!auth) throw new Error("Firebase auth not configured");
+  const res = await fetch("/api/auth/register/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, code }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error ?? "Código incorrecto");
+  const cred = await signInWithCustomToken(auth, data.token);
   return cred.user;
 }
 

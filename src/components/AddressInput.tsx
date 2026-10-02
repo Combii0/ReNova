@@ -9,7 +9,7 @@ export default function AddressInput({
   onChange,
 }: {
   value: string;
-  onChange: (value: string, verified: boolean) => void;
+  onChange: (value: string, verified: boolean, placeId?: string) => void;
 }) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
@@ -50,7 +50,7 @@ export default function AddressInput({
               <button
                 type="button"
                 onClick={() => {
-                  onChange(s.text, true);
+                  onChange(s.text, true, s.placeId);
                   setOpen(false);
                 }}
                 className="w-full px-4 py-3 text-left text-sm font-bold text-[var(--app-text)] hover:bg-[var(--app-soft)]"
