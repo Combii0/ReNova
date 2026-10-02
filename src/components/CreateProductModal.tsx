@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { getIdToken, type User } from "@/lib/auth";
+import { uploadProductImage } from "@/lib/storage";
 import { categories } from "@/data/products";
-
-const emojiOptions = ["🥬", "🥗", "🍔", "☕", "💊", "📱", "🧴", "📦", "🍓", "🥦"];
 
 export default function CreateProductModal({
   user,
@@ -17,9 +16,9 @@ export default function CreateProductModal({
   const [name, setName] = useState("");
   const [store, setStore] = useState("");
   const [price, setPrice] = useState("");
-  const [before, setBefore] = useState("");
+  const [isFree, setIsFree] = useState(false);
   const [category, setCategory] = useState(categories[1]);
-  const [image, setImage] = useState(emojiOptions[0]);
+  const [file, setFile] = useState<File | null>(null);
   const [description, setDescription] = useState("");
   const [expirationDate, setExpirationDate] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,11 +27,14 @@ export default function CreateProductModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!user || !file) return;
     setLoading(true);
     setError("");
 
     try {
       const token = await getIdToken(user);
+      const image = await uploadProductImage(file, token);
+
       const res = await fetch("/api/products", {
         method: "POST",
         headers: {
@@ -42,13 +44,13 @@ export default function CreateProductModal({
         body: JSON.stringify({
           name,
           store,
-          price,
-          before,
+          price: isFree ? "Gratis" : price,
+          donation: isFree,
           tag: category,
-          rating: "5.0",
           image,
           tone: "from-slate-100 to-slate-50",
           specifications: description || undefined,
+          expirationDate: expirationDate || undefined,
         }),
       });
 
@@ -65,7 +67,7 @@ export default function CreateProductModal({
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/35 p-4">
-      <div className="w-full max-w-md rounded-[1.5rem] bg-[var(--app-surface)] p-6 shadow-2xl">
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-[1.5rem] bg-[var(--app-surface)] p-6 shadow-2xl">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-black text-[var(--app-text)]">Subir producto</h2>
           <button onClick={onClose} className="rounded-full p-1 hover:bg-[var(--app-soft)]" aria-label="Cerrar">
@@ -100,21 +102,23 @@ export default function CreateProductModal({
               onChange={(e) => setStore(e.target.value)}
               className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)]"
             />
-            <div className="grid grid-cols-2 gap-3">
+
+            <input
+              required={!isFree}
+              disabled={isFree}
+              placeholder={isFree ? "Gratis" : "Precio"}
+              value={isFree ? "" : price}
+              onChange={(e) => setPrice(e.target.value)}
+              className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] disabled:opacity-50"
+            />
+            <label className="flex items-center gap-2 text-sm font-bold text-[var(--app-text)]">
               <input
-                required
-                placeholder="Precio"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)]"
+                type="checkbox"
+                checked={isFree}
+                onChange={(e) => setIsFree(e.target.checked)}
               />
-              <input
-                placeholder="Precio original"
-                value={before}
-                onChange={(e) => setBefore(e.target.value)}
-                className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)]"
-              />
-            </div>
+              Donación (gratis)
+            </label>
 
             <div>
               <p className="mb-2 text-xs font-bold text-[var(--app-muted)]">Categoría</p>
@@ -139,27 +143,19 @@ export default function CreateProductModal({
             </div>
 
             <div>
-              <p className="mb-2 text-xs font-bold text-[var(--app-muted)]">Icono</p>
-              <div className="flex flex-wrap gap-2">
-                {emojiOptions.map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => setImage(emoji)}
-                    className={`flex h-10 w-10 items-center justify-center rounded-xl text-lg ring-1 ring-[var(--app-border)] ${
-                      image === emoji ? "bg-[var(--brand)]" : "bg-[var(--app-soft)]"
-                    }`}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
+              <p className="mb-2 text-xs font-bold text-[var(--app-muted)]">Imagen</p>
+              <input
+                type="file"
+                accept="image/*"
+                required
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="w-full text-sm font-bold text-[var(--app-muted)]"
+              />
             </div>
 
             <div>
-              <p 
-                className="mb-2 text-xs font-bold text-[var(--app-muted)]">
-                  Descripción breve (opcional)
+              <p className="mb-2 text-xs font-bold text-[var(--app-muted)]">
+                Descripción breve (opcional)
               </p>
               <textarea
                 value={description}

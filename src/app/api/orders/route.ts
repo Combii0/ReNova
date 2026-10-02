@@ -11,6 +11,9 @@ async function requireUserId(req: NextRequest): Promise<string | NextResponse> {
 
   try {
     const decoded = await adminAuth.verifyIdToken(token);
+    if (decoded.firebase.sign_in_provider === "password") {
+      return NextResponse.json({ error: "Verificación en dos pasos requerida" }, { status: 403 });
+    }
     return decoded.uid;
   } catch {
     return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });

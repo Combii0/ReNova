@@ -22,8 +22,16 @@ export default function Home() {
     );
   }
 
+  const orderItems = products.slice(0, 3);
+  const subtotal = orderItems.reduce(
+    (sum, p) => sum + Number(p.price.replace(/\D/g, "")),
+    0,
+  );
+  const shipping = 4900;
+  const formatPrice = (n: number) => "$" + n.toLocaleString("es-CO");
+
   return (
-    <main className="mx-auto grid w-full max-w-7xl gap-4 px-3 py-4 sm:gap-5 sm:px-4 sm:py-5 lg:grid-cols-[minmax(0.1fr)_320px] lg:gap-6 lg:px-6 xl:px-8">
+    <main className="mx-auto grid w-full max-w-7xl gap-4 px-3 py-4 sm:gap-5 sm:px-4 sm:py-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6 lg:px-6 xl:px-8">
       <section className="min-w-0">
         <div className="overflow-hidden rounded-[2rem] bg-[var(--brand)] text-white shadow-sm">
           <div className="grid gap-5 p-4 sm:p-6 md:grid-cols-[1.3fr_0.7fr] lg:p-8">
@@ -32,7 +40,7 @@ export default function Home() {
                 <p className="text-sm font-bold uppercase tracking-wide text-white/80">
                   ReNova Express
                 </p>
-                <h1 className="mt-3 max-w-xl text-3xl font-black leading-tight sm:text-4xl lg: text-5xl">
+                <h1 className="mt-3 max-w-xl text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                   Haz que cada objeto tenga una nueva historia...
                 </h1>
                 <p className="mt-4 max-w-2xl text-base font-medium leading-7 text-white/85">
@@ -98,15 +106,23 @@ export default function Home() {
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {products.map((product) => (
             <article
-              key={product.name}
+              key={product.id ?? product.name}
               className="group overflow-hidden rounded-[1.5rem] bg-[var(--app-surface)] shadow-sm ring-1 ring-[var(--app-border)] transition hover:-translate-y-0.5 hover:shadow-md"
             >
               <div
                 className={`relative flex aspect-[4/3] items-center justify-center bg-gradient-to-br ${product.tone}`}
               >
-                <span className="text-7xl drop-shadow-sm" aria-hidden>
-                  {product.image}
-                </span>
+                {product.image?.startsWith("http") ? (
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-7xl drop-shadow-sm" aria-hidden>
+                    {product.image}
+                  </span>
+                )}
                 <span className="absolute left-3 top-3 rounded-full bg-white px-3 py-1 text-xs font-black text-[var(--brand)] shadow-sm">
                   {product.tag}
                 </span>
@@ -128,22 +144,17 @@ export default function Home() {
                       {product.store}
                     </p>
                   </div>
-                  <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-black text-amber-700">
                   {product.rating && (
-                    <>★ {product.rating}</>
+                    <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-black text-amber-700">
+                      ★ {product.rating}
+                    </span>
                   )}
-                  </span>
                 </div>
 
                 <div className="mt-4">
                   <p className="text-lg font-black text-[var(--app-text)]">
                     {product.price}
                   </p>
-                  {product.before && (
-                    <p className="text-xs font-bold text-[var(--app-muted)] line-through">
-                      {product.before}
-                    </p>
-                  )}
                 </div>
               </div>
             </article>
@@ -158,17 +169,21 @@ export default function Home() {
               Mi pedido
             </h2>
             <span className="rounded-full bg-[var(--brand-soft)] px-3 py-1 text-xs font-black text-[var(--brand)]">
-              3 items
+              {orderItems.length} items
             </span>
           </div>
 
           <div className="mt-5 space-y-4">
-            {products.slice(0, 3).map((product) => (
-              <div key={product.name} className="flex items-center gap-3">
+            {orderItems.map((product) => (
+              <div key={product.id ?? product.name} className="flex items-center gap-3">
                 <div
-                  className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${product.tone} text-2xl`}
+                  className={`flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br ${product.tone} text-2xl`}
                 >
-                  {product.image}
+                  {product.image?.startsWith("http") ? (
+                    <img src={product.image} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    product.image
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-black text-[var(--app-text)]">
@@ -188,15 +203,15 @@ export default function Home() {
           <div className="mt-6 space-y-3 border-t border-[var(--app-border)] pt-5 text-sm font-bold">
             <div className="flex justify-between text-[var(--app-muted)]">
               <span>Subtotal</span>
-              <span>$97.600</span>
+              <span>{formatPrice(subtotal)}</span>
             </div>
             <div className="flex justify-between text-[var(--app-muted)]">
               <span>Envio</span>
-              <span>$4.900</span>
+              <span>{formatPrice(shipping)}</span>
             </div>
             <div className="flex justify-between text-lg font-black text-[var(--app-text)]">
               <span>Total</span>
-              <span>$102.500</span>
+              <span>{formatPrice(subtotal + shipping)}</span>
             </div>
           </div>
 
@@ -208,4 +223,3 @@ export default function Home() {
     </main>
   );
 }
-

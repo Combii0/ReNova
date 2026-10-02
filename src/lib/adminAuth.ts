@@ -14,6 +14,9 @@ export async function requireAdmin(req: NextRequest): Promise<string | NextRespo
 
   try {
     const decoded = await adminAuth.verifyIdToken(token);
+    if (decoded.firebase.sign_in_provider === "password") {
+      return NextResponse.json({ error: "Verificación en dos pasos requerida" }, { status: 403 });
+    }
     const userDoc = await adminDb.collection("users").doc(decoded.uid).get();
     if (userDoc.data()?.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -37,6 +40,9 @@ export async function requireSocio(req: NextRequest): Promise<string | NextRespo
 
   try {
     const decoded = await adminAuth.verifyIdToken(token);
+    if (decoded.firebase.sign_in_provider === "password") {
+      return NextResponse.json({ error: "Verificación en dos pasos requerida" }, { status: 403 });
+    }
     const userDoc = await adminDb.collection("users").doc(decoded.uid).get();
     const role = userDoc.data()?.role;
     if (role !== "socio" && role !== "admin") {

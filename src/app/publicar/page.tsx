@@ -4,9 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser, getIdToken } from "@/lib/auth";
+import { uploadProductImage } from "@/lib/storage";
 import { categories } from "@/data/products";
-
-const emojiOptions = ["🥬", "🥗", "🍔", "☕", "💊", "📱", "🧴", "📦", "🍓", "🥦"];
 
 export default function PublishProductPage() {
   const router = useRouter();
@@ -15,9 +14,9 @@ export default function PublishProductPage() {
   const [name, setName] = useState("");
   const [store, setStore] = useState("");
   const [price, setPrice] = useState("");
-  const [before, setBefore] = useState("");
+  const [isFree, setIsFree] = useState(false);
   const [category, setCategory] = useState(categories[1]);
-  const [image, setImage] = useState(emojiOptions[0]);
+  const [file, setFile] = useState<File | null>(null);
   const [description, setDescription] = useState("");
   const [expirationDate, setExpirationDate] = useState("");
 
@@ -32,20 +31,25 @@ export default function PublishProductPage() {
       setError("Debes iniciar sesión para publicar un producto.");
       return;
     }
+    if (!file) {
+      setError("Selecciona una imagen del producto.");
+      return;
+    }
 
     setLoading(true);
     try {
       const token = await getIdToken(user);
+      const image = await uploadProductImage(file, token);
 
       const body: Record<string, unknown> = {
         name,
         store,
-        price,
+        price: isFree ? "Gratis" : price,
+        donation: isFree,
         tag: category,
         image,
         tone: "from-slate-100 to-slate-50",
       };
-      if (before) body.before = before;
       if (description) body.specifications = description;
       if (expirationDate) body.expirationDate = expirationDate;
 
@@ -127,32 +131,27 @@ export default function PublishProductPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="price" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
-              Precio
-            </label>
+        <div>
+          <label htmlFor="price" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
+            Precio
+          </label>
+          <input
+            id="price"
+            required={!isFree}
+            disabled={isFree}
+            value={isFree ? "" : price}
+            onChange={(e) => setPrice(e.target.value)}
+            className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)] disabled:opacity-50"
+            placeholder={isFree ? "Gratis" : "$42.900"}
+          />
+          <label className="mt-2 flex items-center gap-2 text-sm font-bold text-[var(--app-text)]">
             <input
-              id="price"
-              required
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
-              placeholder="$42.900"
+              type="checkbox"
+              checked={isFree}
+              onChange={(e) => setIsFree(e.target.checked)}
             />
-          </div>
-          <div>
-            <label htmlFor="before" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
-              Precio original (opcional)
-            </label>
-            <input
-              id="before"
-              value={before}
-              onChange={(e) => setBefore(e.target.value)}
-              className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
-              placeholder="$51.000"
-            />
-          </div>
+            Donación (gratis)
+          </label>
         </div>
 
         <div>
@@ -178,21 +177,17 @@ export default function PublishProductPage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-bold text-[var(--app-text)]">Icono</label>
-          <div className="flex flex-wrap gap-2">
-            {emojiOptions.map((emoji) => (
-              <button
-                key={emoji}
-                type="button"
-                onClick={() => setImage(emoji)}
-                className={`flex h-11 w-11 items-center justify-center rounded-xl text-lg ring-1 ring-[var(--app-border)] ${
-                  image === emoji ? "bg-[var(--brand)]" : "bg-[var(--app-soft)]"
-                }`}
-              >
-                {emoji}
-              </button>
-            ))}
-          </div>
+          <label htmlFor="image" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
+            Imagen
+          </label>
+          <input
+            id="image"
+            type="file"
+            accept="image/*"
+            required
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            className="w-full text-sm font-bold text-[var(--app-muted)]"
+          />
         </div>
 
         <div>

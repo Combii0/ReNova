@@ -5,6 +5,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
   signInWithEmailAndPassword,
+  signInWithCustomToken,
   signInWithPopup,
   GoogleAuthProvider,
   signOut as fbSignOut,
@@ -49,6 +50,33 @@ export async function loginClient(
 ): Promise<FirebaseUser> {
   if (!auth) throw new Error("Firebase auth not configured");
   const cred = await signInWithEmailAndPassword(auth, email, password);
+  return cred.user;
+}
+
+/** Paso 1 del login: valida correo y contraseña y envía el código por correo. */
+export async function requestCodeClient(email: string, password: string): Promise<void> {
+  const res = await fetch("/api/auth/2fa/request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error ?? "No se pudo enviar el código");
+  }
+}
+
+/** Paso 2 del login: valida el código y entra con el custom token. */
+export async function verifyCodeClient(email: string, code: string): Promise<FirebaseUser> {
+  if (!auth) throw new Error("Firebase auth not configured");
+  const res = await fetch("/api/auth/2fa/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, code }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error ?? "Código incorrecto");
+  const cred = await signInWithCustomToken(auth, data.token);
   return cred.user;
 }
 

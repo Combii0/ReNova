@@ -1,5 +1,6 @@
 import { couriers } from "@/data/orders";
 import SettingsPanel from "@/components/SettingsPanel";
+import AccountSettings from "@/components/AccountSettings";
 
 export default function SettingsPage() {
   return (
@@ -14,6 +15,10 @@ export default function SettingsPage() {
       </div>
 
       <SettingsPanel />
+
+      <div className="mt-6">
+        <AccountSettings />
+      </div>
 
       <section className="mt-6 rounded-[1.5rem] bg-[var(--app-surface)] p-5 shadow-sm ring-1 ring-[var(--app-border)]">
         <p className="text-sm font-bold uppercase tracking-wide text-[var(--brand)]">
@@ -51,4 +56,3 @@ export default function SettingsPage() {
     </main>
   );
 }
-

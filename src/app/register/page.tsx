@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { registerClient, googleLoginClient, getIdToken } from "@/lib/auth";
+import { registerClient, googleLoginClient, getIdToken, logoutClient } from "@/lib/auth";
+import AddressInput from "@/components/AddressInput";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -12,14 +13,21 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [addressOk, setAddressOk] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError("");
+
+    if (address && !addressOk) {
+      setError("Selecciona tu dirección de la lista de sugerencias.");
+      return;
+    }
+
+    setLoading(true);
     try {
       const newUser = await registerClient(email, password, displayName);
       const token = await getIdToken(newUser);
@@ -34,8 +42,9 @@ export default function RegisterPage() {
         }),
       });
       if (!meRes.ok) throw new Error("No se pudo guardar tu perfil");
-      router.push("/");
-      router.refresh();
+
+      await logoutClient();
+      router.push("/login");
     } catch (err: unknown) {
       setError((err as Error).message || "Registration failed");
     } finally {
@@ -140,16 +149,15 @@ export default function RegisterPage() {
         </div>
 
         <div>
-          <label htmlFor="address" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
+          <label className="mb-1 block text-sm font-bold text-[var(--app-text)]">
             Dirección (opcional)
           </label>
-          <input
-            id="address"
-            type="text"
+          <AddressInput
             value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
-            placeholder="Cra 76 #32-18, Apto 301, Bogotá, Colombia"
+            onChange={(text, ok) => {
+              setAddress(text);
+              setAddressOk(ok);
+            }}
           />
         </div>
 

@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { loginClient, googleLoginClient } from "@/lib/auth";
+import { requestCodeClient, verifyCodeClient, googleLoginClient } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [step, setStep] = useState<"credentials" | "code">("credentials");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -17,9 +19,14 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     try {
-      await loginClient(email, password);
-      router.push("/");
-      router.refresh();
+      if (step === "credentials") {
+        await requestCodeClient(email, password);
+        setStep("code");
+      } else {
+        await verifyCodeClient(email, code);
+        router.push("/");
+        router.refresh();
+      }
     } catch (err: unknown) {
       setError((err as Error).message || "Login failed");
     } finally {
@@ -45,50 +52,84 @@ export default function LoginPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="w-full space-y-4 rounded-2xl bg-[var(--app-surface)] p-6 shadow-sm ring-1 ring-[var(--app-border)]">
-        <div>
-          <label htmlFor="email" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
-            Correo electrónico
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
-            placeholder="ejemplo@correo.com"
-          />
-        </div>
+        {step === "credentials" && (
+          <>
+            <div>
+              <label htmlFor="email" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
+                Correo electrónico
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
+                placeholder="ejemplo@correo.com"
+              />
+            </div>
 
-        <div>
-          <label htmlFor="password" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
-            Contraseña
-          </label>
-          <div className="relative">
+            <div>
+              <label htmlFor="password" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
+                Contraseña
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 pr-10 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
+                  placeholder="Contraseña"
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowPassword((s) => !s)}
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--app-muted)] hover:text-[var(--app-text)]"
+                >
+                  {showPassword ? (
+                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  ) : (
+                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/></svg>
+                  )}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {step === "code" && (
+          <div>
+            <label htmlFor="code" className="mb-1 block text-sm font-bold text-[var(--app-text)]">
+              Código de 6 dígitos
+            </label>
             <input
-              id="password"
-              type={showPassword ? "text" : "password"}
+              id="code"
+              inputMode="numeric"
+              maxLength={6}
               required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 pr-10 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
-              placeholder="Contraseña"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-center text-lg font-bold tracking-widest outline-none ring-1 focus:ring-[var(--brand)]"
+              placeholder="000000"
             />
+            <p className="mt-2 text-xs text-[var(--app-muted)]">Te lo enviamos a {email}.</p>
             <button
               type="button"
-              tabIndex={-1}
-              onClick={() => setShowPassword((s) => !s)}
-              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--app-muted)] hover:text-[var(--app-text)]"
+              onClick={() => {
+                setStep("credentials");
+                setCode("");
+                setError("");
+              }}
+              className="mt-1 text-xs font-bold text-[var(--brand)] hover:underline"
             >
-              {showPassword ? (
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              ) : (
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/></svg>
-              )}
+              Usar otro correo
             </button>
           </div>
-        </div>
+        )}
 
         {error && (
           <p className="text-sm font-semibold text-red-500">{error}</p>
@@ -99,7 +140,11 @@ export default function LoginPage() {
           disabled={loading}
           className="w-full rounded-full bg-[var(--app-text)] py-3 text-sm font-black text-[var(--app-bg)] shadow-sm transition hover:opacity-90 disabled:opacity-50"
         >
-          {loading ? "Iniciando sesión..." : "Iniciar sesión"}
+          {loading
+            ? "Procesando..."
+            : step === "credentials"
+              ? "Continuar"
+              : "Verificar código"}
         </button>
 
         <div className="relative">

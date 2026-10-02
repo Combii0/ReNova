@@ -23,7 +23,9 @@ export async function GET(req: NextRequest) {
       try {
         const decoded = await adminAuth.verifyIdToken(authHeader.replace(/^Bearer\s+/i, ""));
         const userDoc = await adminDb.collection("users").doc(decoded.uid).get();
-        isAdmin = userDoc.data()?.role === "admin";
+        isAdmin =
+          userDoc.data()?.role === "admin" &&
+          decoded.firebase.sign_in_provider !== "password";
       } catch {
         isAdmin = false;
       }

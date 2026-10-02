@@ -1,12 +1,13 @@
 export type Product = {
+  id?: string;
   name: string;
   store: string;
   price: string;
-  before: string;
   tag: string;
-  rating: string;
+  rating?: string;
   image: string;
   tone: string;
   time?: string;
   expirationDate?: string;
+  donation?: boolean;
 };
