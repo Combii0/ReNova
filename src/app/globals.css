@@ -7,10 +7,11 @@
   --app-surface: #f3f4f1;
   --app-soft: #bac8b1;
   --app-text: #404e3b;
-  --app-muted: #6c8480;
+  --app-muted: #3f524e;
   --app-border: rgb(64 78 59 / 0.16);
-  --brand: #7b9669;
-  --brand-soft: rgb(123 150 105 / 0.16);
+  --brand: #4f6840;
+  --brand-soft: rgb(79 104 64 / 0.16);
+  --on-brand: #ffffff;
 }
 
 [data-theme="dark"] {
@@ -18,10 +19,11 @@
   --app-surface: #33402f;
   --app-soft: #4d5d47;
   --app-text: #e6e6e6;
-  --app-muted: #bac8b1;
+  --app-muted: #d3dccd;
   --app-border: rgb(230 230 230 / 0.12);
   --brand: #bac8b1;
   --brand-soft: rgb(186 200 177 / 0.16);
+  --on-brand: #26301f;
 }
 
 @theme inline {
@@ -50,7 +52,9 @@ button {
   cursor: pointer;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }

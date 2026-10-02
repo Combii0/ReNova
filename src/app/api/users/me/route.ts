@@ -67,6 +67,15 @@ export async function PATCH(req: NextRequest) {
     updateData.createdAt = Timestamp.now();
   }
 
+  // Opción A: mayor de 18 con teléfono guardado pasa a socio
+  const current = existing.data();
+  const finalAge = Number(updateData.age ?? current?.age);
+  const hasPhone = updateData.phone || current?.phone;
+  const currentRole = current?.role ?? "comprador";
+  if (finalAge >= 18 && hasPhone && currentRole === "comprador") {
+    updateData.role = "socio";
+  }
+
   await userRef.set(updateData, { merge: true });
   return NextResponse.json({ success: true });
 }

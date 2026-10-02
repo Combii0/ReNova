@@ -8,7 +8,7 @@ const transporter = nodemailer.createTransport({
 
 export async function sendCodeEmail(to: string, code: string) {
   await transporter.sendMail({
-    from: process.env.SMTP_USER,
+    from: `"ReNova" <${process.env.SMTP_USER}>`,
     to,
     subject: "Tu código de verificación de ReNova",
     text: `Tu código es ${code}. Vence en 10 minutos.`,

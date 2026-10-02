@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
   }
 
   await ref.delete();
+  await adminAuth.updateUser(uid, { emailVerified: true });
   const token = await adminAuth.createCustomToken(uid);
   return NextResponse.json({ token });
 }

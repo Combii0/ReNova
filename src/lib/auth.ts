@@ -44,15 +44,6 @@ export async function registerClient(
   return cred.user;
 }
 
-export async function loginClient(
-  email: string,
-  password: string,
-): Promise<FirebaseUser> {
-  if (!auth) throw new Error("Firebase auth not configured");
-  const cred = await signInWithEmailAndPassword(auth, email, password);
-  return cred.user;
-}
-
 /** Paso 1 del login: valida correo y contraseña y envía el código por correo. */
 export async function requestCodeClient(email: string, password: string): Promise<void> {
   const res = await fetch("/api/auth/2fa/request", {

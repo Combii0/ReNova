@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X } from "lucide-react";
+import { ImagePlus, X } from "lucide-react";
 import { getIdToken, type User } from "@/lib/auth";
 import { uploadProductImage } from "@/lib/storage";
 import { categories } from "@/data/products";
@@ -94,13 +94,13 @@ export default function CreateProductModal({
               placeholder="Nombre del producto"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)]"
+              className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
             />
             <input
-              placeholder="Tienda"
+              placeholder="Tienda (opcional)"
               value={store}
               onChange={(e) => setStore(e.target.value)}
-              className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)]"
+              className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]"
             />
 
             <input
@@ -109,16 +109,37 @@ export default function CreateProductModal({
               placeholder={isFree ? "Gratis" : "Precio"}
               value={isFree ? "" : price}
               onChange={(e) => setPrice(e.target.value)}
-              className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] disabled:opacity-50"
+              className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)] disabled:opacity-50"
             />
-            <label className="flex items-center gap-2 text-sm font-bold text-[var(--app-text)]">
-              <input
-                type="checkbox"
-                checked={isFree}
-                onChange={(e) => setIsFree(e.target.checked)}
-              />
-              Donación (gratis)
-            </label>
+
+            <button
+              type="button"
+              aria-pressed={isFree}
+              onClick={() => setIsFree((v) => !v)}
+              className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left ring-1 ring-[var(--app-border)] ${
+                isFree ? "bg-[var(--brand-soft)]" : "bg-[var(--app-soft)]"
+              }`}
+            >
+              <span>
+                <span className="block text-sm font-black text-[var(--app-text)]">
+                  Donación (gratis)
+                </span>
+                <span className="block text-xs font-bold text-[var(--app-muted)]">
+                  El producto se publica sin precio
+                </span>
+              </span>
+              <span
+                className={`flex h-7 w-12 items-center rounded-full p-1 transition ${
+                  isFree ? "bg-[var(--brand)]" : "bg-[var(--app-border)]"
+                }`}
+              >
+                <span
+                  className={`h-5 w-5 rounded-full bg-white transition ${
+                    isFree ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </span>
+            </button>
 
             <div>
               <p className="mb-2 text-xs font-bold text-[var(--app-muted)]">Categoría</p>
@@ -144,13 +165,20 @@ export default function CreateProductModal({
 
             <div>
               <p className="mb-2 text-xs font-bold text-[var(--app-muted)]">Imagen</p>
-              <input
-                type="file"
-                accept="image/*"
-                required
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                className="w-full text-sm font-bold text-[var(--app-muted)]"
-              />
+              <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-[var(--brand)] bg-[var(--app-soft)] px-4 py-6 text-center">
+                <ImagePlus size={28} className="text-[var(--brand)]" />
+                <span className="text-sm font-black text-[var(--app-text)]">
+                  {file ? file.name : "Toca para subir una imagen"}
+                </span>
+                <span className="text-xs font-bold text-[var(--app-muted)]">Máximo 5 MB</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  required
+                  className="sr-only"
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                />
+              </label>
             </div>
 
             <div>
