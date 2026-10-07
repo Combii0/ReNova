@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { updateProfile } from "firebase/auth";
 import { useUser, getIdToken, logoutClient } from "@/lib/auth";
 import AddressInput from "@/components/AddressInput";
+import SocioRequirements, { type Requirements } from "@/components/SocioRequirements";
 
 const card = "rounded-[1.5rem] bg-[var(--app-surface)] p-5 shadow-sm ring-1 ring-[var(--app-border)]";
 const field = "w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)]";
@@ -22,6 +23,7 @@ export default function AccountSettings() {
   const [address, setAddress] = useState("");
   const [addressOk, setAddressOk] = useState(true);
   const [placeId, setPlaceId] = useState("");
+  const [profile, setProfile] = useState<{ role: string; requirements: Requirements } | null>(null);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -50,6 +52,7 @@ export default function AccountSettings() {
       setPhone((data.phone ?? "").replace(/\D/g, "").replace(/^57/, ""));
       setAddress(data.address ?? "");
       setAddressOk(true);
+      setProfile({ role: data.role, requirements: data.requirements });
     })();
   }, [user]);
 
@@ -86,6 +89,7 @@ export default function AccountSettings() {
       return;
     }
 
+    setProfile({ role: data.role, requirements: data.requirements });
     if (displayName) await updateProfile(user, { displayName });
     setMessage(data.role === "socio" ? "Datos guardados. Ya eres socio." : "Datos guardados.");
   }
@@ -160,6 +164,21 @@ export default function AccountSettings() {
       {error && <p className="text-sm font-semibold text-red-500">{error}</p>}
       {message && <p className="text-sm font-semibold text-[var(--brand)]">{message}</p>}
 
+      <section className={card}>
+        <p className={eyebrow}>Rol actual</p>
+        <h2 className="mt-1 text-2xl font-black capitalize text-[var(--app-text)]">
+          {profile?.role ?? "..."}
+        </h2>
+        {profile?.role === "comprador" && (
+          <>
+            <p className="mt-2 text-sm font-bold text-[var(--app-muted)]">
+              Para publicar productos necesitas ser socio. Pasas a serlo automáticamente al guardar estos datos:
+            </p>
+            <SocioRequirements requirements={profile.requirements} />
+          </>
+        )}
+      </section>
+
       <form onSubmit={saveProfile} className={`${card} space-y-4`}>
         <div>
           <p className={eyebrow}>Cuenta</p>
@@ -207,6 +226,14 @@ export default function AccountSettings() {
               setPlaceId(id ?? "");
             }}
           />
+          {address && addressOk && (
+            <iframe
+              className="mt-3 h-48 w-full rounded-xl"
+              loading="lazy"
+              title="Mapa de tu dirección"
+              src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY}&q=${encodeURIComponent(address)}`}
+            />
+          )}
         </div>
 
         <button type="submit" className={button}>Guardar cambios</button>

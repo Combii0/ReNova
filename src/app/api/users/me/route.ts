@@ -16,6 +16,14 @@ function ageFromBirthDate(birthDate: string) {
   return age;
 }
 
+function socioChecks(data?: Record<string, unknown>) {
+  return {
+    age: !!data?.birthDate && ageFromBirthDate(data.birthDate as string) >= 16,
+    phone: !!data?.phone,
+    address: !!data?.address,
+  };
+}
+
 async function requireUserId(
   req: NextRequest,
   allowIfNoProfile = false,
@@ -113,17 +121,20 @@ export async function PATCH(req: NextRequest) {
     updateData.createdAt = Timestamp.now();
   }
 
-  // Pasa a socio: mayor de 18 y con teléfono guardado
+  // Pasa a socio: 16+ años, teléfono y dirección guardados
   const current = existing.data();
-  const birthDate = (updateData.birthDate ?? current?.birthDate) as string | undefined;
-  const hasPhone = updateData.phone || current?.phone;
   const currentRole = current?.role ?? "comprador";
-  if (birthDate && ageFromBirthDate(birthDate) >= 18 && hasPhone && currentRole === "comprador") {
+  const checks = socioChecks({ ...current, ...updateData });
+  if (checks.age && checks.phone && checks.address && currentRole === "comprador") {
     updateData.role = "socio";
   }
 
   await userRef.set(updateData, { merge: true });
-  return NextResponse.json({ success: true, role: updateData.role ?? currentRole });
+  return NextResponse.json({
+    success: true,
+    role: updateData.role ?? currentRole,
+    requirements: checks,
+  });
 }
 
 // ── GET perfil (autenticado) ─────────────────────────────────────────────────
@@ -144,6 +155,7 @@ export async function GET(req: NextRequest) {
     email: data.email,
     displayName: data.displayName,
     role: data.role ?? "comprador",
+    requirements: socioChecks(data),
     createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
   };
 

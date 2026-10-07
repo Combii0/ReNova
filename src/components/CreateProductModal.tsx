@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { ImagePlus, X } from "lucide-react";
 import { getIdToken, type User } from "@/lib/auth";
 import { uploadProductImage } from "@/lib/storage";
 import { categories } from "@/data/products";
+import SocioRequirements, { type Requirements } from "@/components/SocioRequirements";
 
 export default function CreateProductModal({
   user,
@@ -24,6 +26,20 @@ export default function CreateProductModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [profile, setProfile] = useState<{ role: string; requirements: Requirements } | null>(null);
+  const [checkingRole, setCheckingRole] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = await getIdToken(user);
+        const res = await fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) setProfile(await res.json());
+      } finally {
+        setCheckingRole(false);
+      }
+    })();
+  }, [user]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -75,7 +91,23 @@ export default function CreateProductModal({
           </button>
         </div>
 
-        {success ? (
+        {checkingRole ? (
+          <p className="mt-6 text-sm font-bold text-[var(--app-muted)]">Cargando...</p>
+        ) : profile?.role === "comprador" ? (
+          <div className="mt-4">
+            <p className="text-sm font-bold text-[var(--app-text)]">
+              Aún no puedes publicar. Para ser socio te falta completar:
+            </p>
+            <SocioRequirements requirements={profile.requirements} />
+            <Link
+              href="/configuracion"
+              onClick={onClose}
+              className="mt-5 flex h-11 w-full items-center justify-center rounded-full bg-[var(--app-text)] text-sm font-black text-[var(--app-bg)]"
+            >
+              Completar mis datos
+            </Link>
+          </div>
+        ) : success ? (
           <div className="mt-6 space-y-4">
             <p className="text-sm font-bold text-[var(--app-text)]">
               Producto creado. Recarga la página principal para verlo.

@@ -3,6 +3,7 @@ import { randomInt, createHash } from "node:crypto";
 import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
 import { encrypt } from "@/lib/crypto";
 import { sendCodeEmail } from "@/lib/mailer";
+import { Timestamp } from "firebase-admin/firestore";
 
 export async function POST(req: NextRequest) {
   const adminAuth = getAdminAuth();
@@ -41,6 +42,7 @@ export async function POST(req: NextRequest) {
     codeHash: createHash("sha256").update(code).digest("hex"),
     createdAt: Date.now(),
     expiresAt: Date.now() + 10 * 60 * 1000,
+    deleteAt: Timestamp.fromMillis(Date.now() + 10 * 60 * 1000),
     attempts: 0,
   });
 
