@@ -21,6 +21,7 @@ import CreateProductModal from "@/components/CreateProductModal";
 
 const navigation = [
   { href: "/", label: "Market", icon: Home },
+  { href: "/carrito", label: "Carrito", icon: ShoppingCart },
   { href: "/pedidos", label: "Pedidos", icon: ClipboardList },
   { href: "/helpy", label: "Helpy", icon: Bot },
   { href: "/informacion", label: "Informacion", icon: Info },
@@ -92,13 +93,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             Subir producto
           </button>
 
-          <button
+          <Link
+            href="/carrito"
             className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--app-text)] text-[var(--app-bg)] shadow-sm transition hover:opacity-90 lg:flex"
-            disabled
-            aria-label="Carrito desactivado"
+            aria-label="Carrito"
           >
             <ShoppingCart size={19} />
-          </button>
+          </Link>
 
           {/* Auth button */}
           {user ? (
