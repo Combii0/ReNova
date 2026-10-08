@@ -10,31 +10,39 @@ function todayCo() {
 }
 
 // ── GET all products (público, admin ve campos decriptados) ────────────────
+// ?mine=1 devuelve solo los productos del usuario autenticado (con campos decriptados)
 
 export async function GET(req: NextRequest) {
   const adminDb = getAdminDb();
   if (!adminDb) return NextResponse.json({ error: "Firebase not configured" }, { status: 500 });
 
   const orderField = req.nextUrl.searchParams.get("orderBy");
+  const mine = req.nextUrl.searchParams.get("mine") === "1";
   let queryRef: Query = adminDb.collection("products");
   if (orderField) queryRef = queryRef.orderBy(orderField);
 
   const authHeader = req.headers.get("authorization");
   let isAdmin = false;
+  let userId: string | null = null;
 
   if (authHeader?.startsWith("Bearer ")) {
     const adminAuth = getAdminAuth();
     if (adminAuth) {
       try {
         const decoded = await adminAuth.verifyIdToken(authHeader.replace(/^Bearer\s+/i, ""));
+        userId = decoded.firebase.sign_in_provider !== "password" ? decoded.uid : null;
         const userDoc = await adminDb.collection("users").doc(decoded.uid).get();
-        isAdmin =
-          userDoc.data()?.role === "admin" &&
-          decoded.firebase.sign_in_provider !== "password";
+        isAdmin = userDoc.data()?.role === "admin" && userId !== null;
       } catch {
         isAdmin = false;
+        userId = null;
       }
     }
+  }
+
+  if (mine) {
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    queryRef = queryRef.where("createdBy", "==", userId);
   }
 
   const snapshot = await queryRef.get();
@@ -53,7 +61,7 @@ export async function GET(req: NextRequest) {
 
     const product: Record<string, unknown> = { id: snap.id, ...data };
 
-    if (isAdmin) {
+    if (isAdmin || mine) {
       if (data.encryptedDescription) {
         try { product.encryptedDescription = decrypt(data.encryptedDescription as string); } catch { /* skip */ }
       }

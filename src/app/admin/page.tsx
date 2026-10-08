@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useUser, getIdToken } from "@/lib/auth";
+import CreateProductModal from "@/components/CreateProductModal";
 import type { Product } from "@/types/products";
 
 type AdminUser = {
@@ -17,6 +18,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState<"products" | "users">("products");
   const [products, setProducts] = useState<(Product & { id: string })[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [editing, setEditing] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -118,12 +120,20 @@ export default function AdminPage() {
                 <p className="font-black text-[var(--app-text)]">{product.name}</p>
                 <p className="text-sm font-bold text-[var(--app-muted)]">{product.store} · {product.price}</p>
               </div>
-              <button
-                onClick={() => deleteProduct(product.id)}
-                className="rounded-full bg-red-500/10 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-500/20"
-              >
-                Eliminar
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEditing(product)}
+                  className="rounded-full bg-[var(--app-soft)] px-4 py-2 text-xs font-bold text-[var(--app-text)]"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => deleteProduct(product.id)}
+                  className="rounded-full bg-red-500/10 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-500/20"
+                >
+                  Eliminar
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -152,6 +162,14 @@ export default function AdminPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {editing && (
+        <CreateProductModal
+          user={user}
+          product={editing}
+          onClose={() => setEditing(null)}
+        />
       )}
     </main>
   );

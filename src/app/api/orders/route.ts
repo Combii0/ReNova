@@ -20,6 +20,7 @@ async function requireUserId(req: NextRequest): Promise<string | NextResponse> {
   }
 }
 
+// ?as=seller devuelve los pedidos que contienen productos del usuario
 export async function GET(req: NextRequest) {
   const adminDb = getAdminDb();
   if (!adminDb) return NextResponse.json({ error: "Firebase not configured" }, { status: 500 });
@@ -27,12 +28,24 @@ export async function GET(req: NextRequest) {
   const userId = await requireUserId(req);
   if (typeof userId === "object") return userId;
 
-  const snapshot = await adminDb.collection("orders").where("userId", "==", userId).get();
+  const asSeller = req.nextUrl.searchParams.get("as") === "seller";
+  const snapshot = await adminDb
+    .collection("orders")
+    .where(asSeller ? "sellerIds" : "userId", asSeller ? "array-contains" : "==", userId)
+    .get();
 
   const orders: Record<string, unknown>[] = [];
   for (const snap of snapshot.docs) {
     const data = snap.data();
     const order: Record<string, unknown> = { id: snap.id, ...data };
+
+    if (asSeller) {
+      // el vendedor no recibe la dirección ni el teléfono cifrados
+      delete order.encryptedPhone;
+      delete order.encryptedDestination;
+      orders.push(order);
+      continue;
+    }
 
     if (data.encryptedPhone) {
       try {
@@ -61,8 +74,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "items array is required" }, { status: 400 });
   }
 
+  // el vendedor sale del producto en el servidor, no del cliente
+  const sellerIds = new Set<string>();
+  for (const item of body.items) {
+    if (!item.productId) continue;
+    const product = await adminDb.collection("products").doc(item.productId).get();
+    const seller = product.data()?.createdBy;
+    if (seller) sellerIds.add(seller);
+  }
+
+  const buyer = await adminDb.collection("users").doc(userId).get();
+
   const orderData: Record<string, unknown> = {
     userId,
+    buyerName: buyer.data()?.displayName ?? "",
+    sellerIds: [...sellerIds],
     items: body.items,
     total: body.total || 0,
     status: "pending",

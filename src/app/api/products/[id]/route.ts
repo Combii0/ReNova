@@ -24,6 +24,11 @@ export async function GET(
     }
   }
 
+  if (typeof data.createdBy === "string") {
+    const seller = await adminDb.collection("users").doc(data.createdBy).get();
+    product.sellerName = seller.data()?.displayName ?? null;
+  }
+
   return NextResponse.json(product);
 }
 

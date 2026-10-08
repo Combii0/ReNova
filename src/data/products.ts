@@ -5,5 +5,5 @@ export const categories = [
   "Farmacia",
   "Tecnologia",
   "Hogar",
-  "Ofertas",
+  "Otros",
 ];

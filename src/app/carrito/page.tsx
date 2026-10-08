@@ -1,11 +1,14 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useFirestoreProducts } from "@/lib/useFirestoreProducts";
+import { useCart } from "@/lib/useCart";
 
 export default function CartPage() {
   const { products, loading } = useFirestoreProducts();
+  const { ids, removeFromCart } = useCart();
 
-  const orderItems = products.slice(0, 3);
+  const orderItems = products.filter((p) => p.id && ids.includes(p.id));
   const subtotal = orderItems.reduce(
     (sum, p) => sum + Number(p.price.replace(/\D/g, "")),
     0,
@@ -31,9 +34,15 @@ export default function CartPage() {
           </span>
         </div>
 
+        {orderItems.length === 0 && (
+          <p className="mt-5 text-sm font-bold text-[var(--app-muted)]">
+            Tu carrito está vacío. Agrega productos desde el market.
+          </p>
+        )}
+
         <div className="mt-5 space-y-4">
           {orderItems.map((product) => (
-            <div key={product.id ?? product.name} className="flex items-center gap-3">
+            <div key={product.id} className="flex items-center gap-3">
               <div
                 className={`flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br ${product.tone} text-2xl`}
               >
@@ -48,6 +57,13 @@ export default function CartPage() {
                 <p className="text-xs font-semibold text-[var(--app-muted)]">{product.price}</p>
               </div>
               <span className="text-sm font-black text-[var(--app-muted)]">x1</span>
+              <button
+                onClick={() => removeFromCart(product.id!)}
+                className="rounded-full p-1 text-[var(--app-muted)] hover:bg-[var(--app-soft)]"
+                aria-label={`Quitar ${product.name} del carrito`}
+              >
+                <X size={18} />
+              </button>
             </div>
           ))}
         </div>

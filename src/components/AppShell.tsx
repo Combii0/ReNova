@@ -13,6 +13,7 @@ import {
   Search,
   Settings,
   ShoppingCart,
+  Store,
   X,
 } from "lucide-react";
 import { applyTheme, getCookie, type AppTheme } from "@/lib/cookies";
@@ -22,7 +23,8 @@ import CreateProductModal from "@/components/CreateProductModal";
 const navigation = [
   { href: "/", label: "Market", icon: Home },
   { href: "/carrito", label: "Carrito", icon: ShoppingCart },
-  { href: "/pedidos", label: "Pedidos", icon: ClipboardList },
+  { href: "/pedidos", label: "Mis compras", icon: ClipboardList },
+  { href: "/mi-tienda", label: "Mi tienda", icon: Store },
   { href: "/helpy", label: "Helpy", icon: Bot },
   { href: "/informacion", label: "Informacion", icon: Info },
 ];

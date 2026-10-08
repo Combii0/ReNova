@@ -10,4 +10,6 @@ export type Product = {
   time?: string;
   expirationDate?: string;
   donation?: boolean;
+  createdBy?: string;
+  specifications?: string;
 };

@@ -1,13 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { categories } from "@/data/products";
 import { useFirestoreProducts } from "@/lib/useFirestoreProducts";
+import { useCart } from "@/lib/useCart";
+import type { Product } from "@/types/products";
+import ProductDetailModal from "@/components/ProductDetailModal";
 
 const formatPrice = (price: string) =>
   "$" + Number(price.replace(/\D/g, "")).toLocaleString("es-CO");
 
 export default function Home() {
   const { products, loading, error } = useFirestoreProducts();
+  const { addToCart, isInCart } = useCart();
+  const [selected, setSelected] = useState<Product | null>(null);
 
   if (loading) {
     return (
@@ -102,7 +108,8 @@ export default function Home() {
           {products.map((product) => (
             <article
               key={product.id ?? product.name}
-              className="group overflow-hidden rounded-[1.5rem] bg-[var(--app-surface)] shadow-sm ring-1 ring-[var(--app-border)] transition hover:-translate-y-0.5 hover:shadow-md"
+              onClick={() => setSelected(product)}
+              className="group cursor-pointer overflow-hidden rounded-[1.5rem] bg-[var(--app-surface)] shadow-sm ring-1 ring-[var(--app-border)] transition hover:-translate-y-0.5 hover:shadow-md"
             >
               <div
                 className={`relative flex aspect-[4/3] items-center justify-center bg-gradient-to-br ${product.tone}`}
@@ -122,10 +129,14 @@ export default function Home() {
                   {product.tag}
                 </span>
                 <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (product.id) addToCart(product.id);
+                  }}
                   className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white text-lg text-zinc-950 shadow-sm transition group-hover:scale-105"
                   aria-label={`Agregar ${product.name} al carrito`}
                 >
-                  ＋
+                  {product.id && isInCart(product.id) ? "✓" : "＋"}
                 </button>
               </div>
 
@@ -162,6 +173,10 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {selected && (
+        <ProductDetailModal product={selected} onClose={() => setSelected(null)} />
+      )}
     </main>
   );
 }

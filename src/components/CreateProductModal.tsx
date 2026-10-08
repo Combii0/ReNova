@@ -6,23 +6,26 @@ import { ImagePlus, X } from "lucide-react";
 import { getIdToken, type User } from "@/lib/auth";
 import { uploadProductImage } from "@/lib/storage";
 import { categories } from "@/data/products";
+import type { Product } from "@/types/products";
 import SocioRequirements, { type Requirements } from "@/components/SocioRequirements";
 
 export default function CreateProductModal({
   user,
+  product,
   onClose,
 }: {
   user: User;
+  product?: Product;
   onClose: () => void;
 }) {
-  const [name, setName] = useState("");
-  const [store, setStore] = useState("");
-  const [price, setPrice] = useState("");
-  const [isFree, setIsFree] = useState(false);
-  const [category, setCategory] = useState(categories[1]);
+  const [name, setName] = useState(product?.name ?? "");
+  const [store, setStore] = useState(product?.store ?? "");
+  const [price, setPrice] = useState(product && !product.donation ? product.price : "");
+  const [isFree, setIsFree] = useState(product?.donation ?? false);
+  const [category, setCategory] = useState(product?.tag ?? categories[1]);
   const [file, setFile] = useState<File | null>(null);
-  const [description, setDescription] = useState("");
-  const [expirationDate, setExpirationDate] = useState("");
+  const [description, setDescription] = useState(product?.specifications ?? "");
+  const [expirationDate, setExpirationDate] = useState(product?.expirationDate ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [profile, setProfile] = useState<{ role: string; requirements: Requirements } | null>(null);
@@ -44,7 +47,7 @@ export default function CreateProductModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!user || !file) return;
+    if (!user || (!file && !product)) return;
     setError("");
 
     if (expirationDate && expirationDate < today) {
@@ -56,10 +59,11 @@ export default function CreateProductModal({
 
     try {
       const token = await getIdToken(user);
-      const image = await uploadProductImage(file, token);
+      const image = file ? await uploadProductImage(file, token) : product!.image;
+      const empty = product ? "" : undefined; // al editar, "" borra el campo
 
-      const res = await fetch("/api/products", {
-        method: "POST",
+      const res = await fetch(product ? `/api/products/${product.id}` : "/api/products", {
+        method: product ? "PATCH" : "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -72,18 +76,19 @@ export default function CreateProductModal({
           tag: category,
           image,
           tone: "from-slate-100 to-slate-50",
-          specifications: description || undefined,
-          expirationDate: expirationDate || undefined,
+          specifications: description || empty,
+          expirationDate: expirationDate || empty,
         }),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "No se pudo crear el producto");
+      if (!res.ok) throw new Error(data.error ?? "No se pudo guardar el producto");
 
-      // Recarga completa y va al inicio para que el market muestre el producto nuevo
-      window.location.href = "/";
+      // Recarga completa para que se vea el cambio
+      if (product) window.location.reload();
+      else window.location.href = "/";
     } catch (err: unknown) {
-      setError((err as Error).message || "No se pudo crear el producto");
+      setError((err as Error).message || "No se pudo guardar el producto");
       setLoading(false);
     }
   }
@@ -92,7 +97,9 @@ export default function CreateProductModal({
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/35 p-4">
       <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-[1.5rem] bg-[var(--app-surface)] p-6 shadow-2xl">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-black text-[var(--app-text)]">Subir producto</h2>
+          <h2 className="text-xl font-black text-[var(--app-text)]">
+            {product ? "Editar producto" : "Subir producto"}
+          </h2>
           <button onClick={onClose} className="rounded-full p-1 hover:bg-[var(--app-soft)]" aria-label="Cerrar">
             <X size={20} />
           </button>
@@ -195,13 +202,17 @@ export default function CreateProductModal({
               <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-[var(--brand)] bg-[var(--app-soft)] px-4 py-6 text-center">
                 <ImagePlus size={28} className="text-[var(--brand)]" />
                 <span className="text-sm font-black text-[var(--app-text)]">
-                  {file ? file.name : "Toca para subir una imagen"}
+                  {file
+                    ? file.name
+                    : product
+                      ? "Toca para cambiar la imagen (opcional)"
+                      : "Toca para subir una imagen"}
                 </span>
                 <span className="text-xs font-bold text-[var(--app-muted)]">Máximo 5 MB</span>
                 <input
                   type="file"
                   accept="image/*"
-                  required
+                  required={!product}
                   className="sr-only"
                   onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                 />
@@ -240,7 +251,7 @@ export default function CreateProductModal({
               disabled={loading}
               className="h-11 w-full rounded-full bg-[var(--app-text)] text-sm font-black text-[var(--app-bg)] disabled:opacity-50"
             >
-              {loading ? "Creando..." : "Crear producto"}
+              {loading ? "Guardando..." : product ? "Guardar cambios" : "Crear producto"}
             </button>
           </form>
         )}
