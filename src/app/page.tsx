@@ -22,8 +22,16 @@ export default function Home() {
     );
   }
 
+  const orderItems = products.slice(0, 3);
+  const subtotal = orderItems.reduce(
+    (sum, p) => sum + Number(p.price.replace(/\D/g, "")),
+    0,
+  );
+  const shipping = 4900;
+  const formatPrice = (n: number) => "$" + n.toLocaleString("es-CO");
+
   return (
-    <main className="mx-auto grid w-full max-w-7xl gap-4 px-3 py-4 sm:gap-5 sm:px-4 sm:py-5 lg:gap-6 lg:px-6 xl:px-8">
+    <main className="mx-auto grid w-full max-w-7xl gap-4 px-3 py-4 sm:gap-5 sm:px-4 sm:py-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6 lg:px-6 xl:px-8">
       <section className="min-w-0">
         <div className="overflow-hidden rounded-[2rem] bg-[var(--brand)] text-white shadow-sm">
           <div className="grid gap-5 p-4 sm:p-6 md:grid-cols-[1.3fr_0.7fr] lg:p-8">
@@ -143,16 +151,82 @@ export default function Home() {
                   )}
                 </div>
 
+                {/* CAMBIO: muestra "Donación" y la fecha de vencimiento */}
                 <div className="mt-4">
                   <p className="text-lg font-black text-[var(--app-text)]">
-                    {product.price}
+                    {product.donation ? "Donación" : product.price}
                   </p>
+                  {product.expirationDate && (
+                    <p className="mt-1 text-xs font-semibold text-[var(--app-muted)]">
+                      Vence: {product.expirationDate.split("-").reverse().join("/")}
+                    </p>
+                  )}
                 </div>
               </div>
             </article>
           ))}
         </div>
       </section>
+
+      <aside className="lg:sticky lg:top-24 lg:h-fit">
+        <div className="rounded-[1.5rem] bg-[var(--app-surface)] p-4 shadow-sm ring-1 ring-[var(--app-border)] sm:p-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-black text-[var(--app-text)]">
+              Mi pedido
+            </h2>
+            <span className="rounded-full bg-[var(--brand-soft)] px-3 py-1 text-xs font-black text-[var(--brand)]">
+              {orderItems.length} items
+            </span>
+          </div>
+
+          <div className="mt-5 space-y-4">
+            {orderItems.map((product) => (
+              <div key={product.id ?? product.name} className="flex items-center gap-3">
+                <div
+                  className={`flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br ${product.tone} text-2xl`}
+                >
+                  {product.image?.startsWith("http") ? (
+                    <img src={product.image} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    product.image
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-black text-[var(--app-text)]">
+                    {product.name}
+                  </p>
+                  {/* CAMBIO: muestra "Donación" */}
+                  <p className="text-xs font-semibold text-[var(--app-muted)]">
+                    {product.donation ? "Donación" : product.price}
+                  </p>
+                </div>
+                <span className="text-sm font-black text-[var(--app-muted)]">
+                  x1
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 space-y-3 border-t border-[var(--app-border)] pt-5 text-sm font-bold">
+            <div className="flex justify-between text-[var(--app-muted)]">
+              <span>Subtotal</span>
+              <span>{formatPrice(subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-[var(--app-muted)]">
+              <span>Envio</span>
+              <span>{formatPrice(shipping)}</span>
+            </div>
+            <div className="flex justify-between text-lg font-black text-[var(--app-text)]">
+              <span>Total</span>
+              <span>{formatPrice(subtotal + shipping)}</span>
+            </div>
+          </div>
+
+          <button className="mt-6 h-12 w-full rounded-full bg-[var(--app-text)] text-sm font-black text-[var(--app-bg)] shadow-sm transition hover:opacity-90">
+            Continuar compra
+          </button>
+        </div>
+      </aside>
     </main>
   );
 }

@@ -25,9 +25,10 @@ export default function CreateProductModal({
   const [expirationDate, setExpirationDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
   const [profile, setProfile] = useState<{ role: string; requirements: Requirements } | null>(null);
   const [checkingRole, setCheckingRole] = useState(true);
+
+  const today = new Date().toLocaleDateString("en-CA");
 
   useEffect(() => {
     (async () => {
@@ -44,8 +45,14 @@ export default function CreateProductModal({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!user || !file) return;
-    setLoading(true);
     setError("");
+
+    if (expirationDate && expirationDate < today) {
+      setError("La fecha de vencimiento no puede ser anterior a hoy.");
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const token = await getIdToken(user);
@@ -60,7 +67,7 @@ export default function CreateProductModal({
         body: JSON.stringify({
           name,
           store,
-          price: isFree ? "Gratis" : price,
+          price: isFree ? "Donación" : price,
           donation: isFree,
           tag: category,
           image,
@@ -73,10 +80,10 @@ export default function CreateProductModal({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "No se pudo crear el producto");
 
-      setSuccess(true);
+      // Recarga completa y va al inicio para que el market muestre el producto nuevo
+      window.location.href = "/";
     } catch (err: unknown) {
       setError((err as Error).message || "No se pudo crear el producto");
-    } finally {
       setLoading(false);
     }
   }
@@ -107,18 +114,6 @@ export default function CreateProductModal({
               Completar mis datos
             </Link>
           </div>
-        ) : success ? (
-          <div className="mt-6 space-y-4">
-            <p className="text-sm font-bold text-[var(--app-text)]">
-              Producto creado. Recarga la página principal para verlo.
-            </p>
-            <button
-              onClick={onClose}
-              className="h-11 w-full rounded-full bg-[var(--app-text)] text-sm font-black text-[var(--app-bg)]"
-            >
-              Cerrar
-            </button>
-          </div>
         ) : (
           <form onSubmit={handleSubmit} className="mt-4 space-y-3">
             <input
@@ -138,7 +133,7 @@ export default function CreateProductModal({
             <input
               required={!isFree}
               disabled={isFree}
-              placeholder={isFree ? "Gratis" : "Precio"}
+              placeholder={isFree ? "Donación" : "Precio"}
               value={isFree ? "" : price}
               onChange={(e) => setPrice(e.target.value)}
               className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)] placeholder:text-[var(--app-muted)] disabled:opacity-50"
@@ -154,7 +149,7 @@ export default function CreateProductModal({
             >
               <span>
                 <span className="block text-sm font-black text-[var(--app-text)]">
-                  Donación (gratis)
+                  Donación
                 </span>
                 <span className="block text-xs font-bold text-[var(--app-muted)]">
                   El producto se publica sin precio
@@ -231,6 +226,7 @@ export default function CreateProductModal({
               </p>
               <input
                 type="date"
+                min={today}
                 value={expirationDate}
                 onChange={(e) => setExpirationDate(e.target.value)}
                 className="w-full rounded-xl border-[var(--app-border)] bg-transparent px-4 py-3 text-sm font-bold outline-none ring-1 focus:ring-[var(--brand)]"

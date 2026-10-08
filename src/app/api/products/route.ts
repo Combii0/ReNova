@@ -4,6 +4,11 @@ import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
 import { encrypt, decrypt } from "@/lib/crypto";
 import { requireSocio } from "@/lib/adminAuth";
 
+// Fecha de hoy en Colombia con formato YYYY-MM-DD
+function todayCo() {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+}
+
 // ── GET all products (público, admin ve campos decriptados) ────────────────
 
 export async function GET(req: NextRequest) {
@@ -34,9 +39,18 @@ export async function GET(req: NextRequest) {
 
   const snapshot = await queryRef.get();
   const products: Record<string, unknown>[] = [];
+  const today = todayCo();
+  const expired = [];
 
   for (const snap of snapshot.docs) {
     const data = snap.data();
+
+    // Producto vencido: se elimina y no se devuelve
+    if (data.expirationDate && data.expirationDate < today) {
+      expired.push(snap.ref);
+      continue;
+    }
+
     const product: Record<string, unknown> = { id: snap.id, ...data };
 
     if (isAdmin) {
@@ -49,6 +63,12 @@ export async function GET(req: NextRequest) {
     }
 
     products.push(product);
+  }
+
+  if (expired.length > 0) {
+    const batch = adminDb.batch();
+    expired.forEach((ref) => batch.delete(ref));
+    await batch.commit();
   }
 
   return NextResponse.json(products);
@@ -72,6 +92,19 @@ export async function POST(req: NextRequest) {
 
   if (!body.name || !body.price) {
     return NextResponse.json({ error: "name and price are required" }, { status: 400 });
+  }
+
+  // Fecha de vencimiento (opcional): debe ser una fecha real y no estar en el pasado
+  if (body.expirationDate) {
+    const date = String(body.expirationDate);
+    const parsed = new Date(date);
+    const validDate = !isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date;
+    if (!validDate) {
+      return NextResponse.json({ error: "Fecha de vencimiento no válida" }, { status: 400 });
+    }
+    if (date < todayCo()) {
+      return NextResponse.json({ error: "La fecha de vencimiento no puede ser anterior a hoy" }, { status: 400 });
+    }
   }
 
   const productData: Record<string, unknown> = {
