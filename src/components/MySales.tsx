@@ -8,6 +8,7 @@ import type { Product } from "@/types/products";
 type SellerOrder = {
   id: string;
   buyerName?: string;
+  buyerRating?: { avg: number; count: number };
   status: string;
   total: number;
   items: { productId: string; name: string; quantity: number }[];
@@ -39,9 +40,20 @@ export default function MySales() {
     })();
   }, [user]);
 
+  async function changeStatus(id: string, status: "accepted" | "rejected") {
+    const token = await getIdToken(user);
+    const res = await fetch("/api/orders", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id, status }),
+    });
+    if (res.ok) {
+      setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
+    }
+  }
+
   if (!user) return <p className={note}>Inicia sesión para ver tu tienda.</p>;
   if (loading) return <p className={note}>Cargando...</p>;
-  if (products.length === 0) return <p className={note}>Aún no has subido productos.</p>;
 
   return (
     <section className="mt-6 grid gap-6 lg:grid-cols-2">
@@ -53,6 +65,11 @@ export default function MySales() {
           Mis productos
         </h2>
         <div className="mt-5 space-y-3">
+          {products.length === 0 && (
+            <p className="text-sm font-bold text-[var(--app-muted)]">
+              Aún no has subido productos.
+            </p>
+          )}
           {products.map((p) => (
             <article
               key={p.id}
@@ -90,10 +107,35 @@ export default function MySales() {
             <article key={o.id} className="rounded-2xl bg-[var(--app-soft)] p-4">
               <p className="font-black text-[var(--app-text)]">
                 {o.buyerName || "Comprador"}
+                {o.buyerRating && (
+                  <span className="ml-2 text-xs font-bold text-amber-700">
+                    ★ {o.buyerRating.avg.toFixed(1)} ({o.buyerRating.count})
+                  </span>
+                )}
               </p>
               <p className="mt-1 text-xs font-bold text-[var(--app-muted)]">
                 {o.items.map((i) => `${i.name} x${i.quantity}`).join(", ")}
               </p>
+              {o.status === "pending" ? (
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => changeStatus(o.id, "accepted")}
+                    className="rounded-full bg-[var(--app-text)] px-4 py-2 text-xs font-black text-[var(--app-bg)]"
+                  >
+                    Aceptar
+                  </button>
+                  <button
+                    onClick={() => changeStatus(o.id, "rejected")}
+                    className="rounded-full bg-red-500/10 px-4 py-2 text-xs font-black text-red-600"
+                  >
+                    Rechazar
+                  </button>
+                </div>
+              ) : (
+                <p className="mt-2 text-xs font-black uppercase text-[var(--brand)]">
+                  {o.status === "accepted" ? "Aceptado" : "Rechazado"}
+                </p>
+              )}
             </article>
           ))}
         </div>

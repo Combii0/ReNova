@@ -13,6 +13,12 @@ type Purchase = {
 
 const note = "mt-6 text-sm font-bold text-[var(--app-muted)]";
 
+const statusLabels: Record<string, string> = {
+  pending: "Pendiente",
+  accepted: "Aceptado",
+  rejected: "Rechazado",
+};
+
 export default function MyPurchases() {
   const user = useUser();
   const [orders, setOrders] = useState<Purchase[]>([]);
@@ -57,7 +63,7 @@ export default function MyPurchases() {
             {o.items.map((i) => `${i.name} x${i.quantity}`).join(", ")}
           </p>
           <p className="mt-2 text-xs font-black uppercase text-[var(--brand)]">
-            {o.status === "pending" ? "Pendiente" : o.status}
+            {statusLabels[o.status] ?? o.status}
           </p>
         </article>
       ))}

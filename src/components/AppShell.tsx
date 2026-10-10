@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { applyTheme, getCookie, type AppTheme } from "@/lib/cookies";
 import { useUser, logoutClient } from "@/lib/auth";
+import { useCart } from "@/lib/useCart";
 import CreateProductModal from "@/components/CreateProductModal";
 
 const navigation = [
@@ -33,6 +34,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const user = useUser();
+  const { ids } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isCreateProductOpen, setIsCreateProductOpen] = useState(false);
@@ -97,10 +99,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
           <Link
             href="/carrito"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--app-text)] text-[var(--app-bg)] shadow-sm transition hover:opacity-90 lg:flex"
+            className="relative flex h-11 w-11 items-center justify-center rounded-full bg-[var(--app-text)] text-[var(--app-bg)] shadow-sm transition hover:opacity-90 lg:flex"
             aria-label="Carrito"
           >
             <ShoppingCart size={19} />
+            {ids.length > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-black text-white">
+                {ids.length}
+              </span>
+            )}
           </Link>
 
           {/* Auth button */}

@@ -1,12 +1,19 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { useFirestoreProducts } from "@/lib/useFirestoreProducts";
 import { useCart } from "@/lib/useCart";
+import { useUser, getIdToken } from "@/lib/auth";
 
 export default function CartPage() {
+  const router = useRouter();
+  const user = useUser();
   const { products, loading } = useFirestoreProducts();
   const { ids, removeFromCart } = useCart();
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
 
   const orderItems = products.filter((p) => p.id && ids.includes(p.id));
   const subtotal = orderItems.reduce(
@@ -15,6 +22,33 @@ export default function CartPage() {
   );
   const shipping = 4900;
   const formatPrice = (n: number) => "$" + n.toLocaleString("es-CO");
+
+  async function checkout() {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    setSending(true);
+    setError("");
+    try {
+      const token = await getIdToken(user);
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ items: orderItems.map((p) => ({ productId: p.id })) }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "No se pudo enviar la solicitud");
+
+      orderItems.forEach((p) => removeFromCart(p.id!));
+      router.push("/pedidos");
+    } catch (err: unknown) {
+      setError((err as Error).message || "No se pudo enviar la solicitud");
+    } finally {
+      setSending(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -83,8 +117,14 @@ export default function CartPage() {
           </div>
         </div>
 
-        <button className="mt-6 h-12 w-full rounded-full bg-[var(--app-text)] text-sm font-black text-[var(--app-bg)] shadow-sm transition hover:opacity-90">
-          Continuar compra
+        {error && <p className="mt-4 text-sm font-semibold text-red-500">{error}</p>}
+
+        <button
+          onClick={checkout}
+          disabled={sending || orderItems.length === 0}
+          className="mt-6 h-12 w-full rounded-full bg-[var(--app-text)] text-sm font-black text-[var(--app-bg)] shadow-sm transition hover:opacity-90 disabled:opacity-50"
+        >
+          {sending ? "Enviando..." : "Continuar compra"}
         </button>
       </div>
     </main>
