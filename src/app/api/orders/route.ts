@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { FieldValue } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
 import { encrypt, decrypt } from "@/lib/crypto";
 
@@ -8,6 +9,9 @@ type OrderItem = {
   price: string;
   quantity: number;
 };
+
+// solicitudes que un comprador puede enviar cada 24 horas (un pedido por vendedor)
+const DAILY_LIMIT = 10;
 
 async function requireUserId(req: NextRequest): Promise<string | NextResponse> {
   const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
@@ -106,6 +110,9 @@ export async function POST(req: NextRequest) {
     if (!product || (product.expirationDate && product.expirationDate < today)) {
       return NextResponse.json({ error: "Un producto ya no está disponible" }, { status: 409 });
     }
+    if (product.reservedOrderId) {
+      return NextResponse.json({ error: "Un producto ya fue reservado por otro comprador" }, { status: 409 });
+    }
     if (!product.createdBy) {
       return NextResponse.json({ error: "Producto sin vendedor" }, { status: 400 });
     }
@@ -121,6 +128,17 @@ export async function POST(req: NextRequest) {
       quantity: 1,
     });
     bySeller.set(product.createdBy, list);
+  }
+
+  // límite diario: pedidos creados por este comprador en las últimas 24 horas
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const previous = await adminDb.collection("orders").where("userId", "==", userId).get();
+  const recent = previous.docs.filter((d) => d.data().createdAt >= since).length;
+  if (recent + bySeller.size > DAILY_LIMIT) {
+    return NextResponse.json(
+      { error: `Solo puedes enviar ${DAILY_LIMIT} solicitudes cada 24 horas` },
+      { status: 429 },
+    );
   }
 
   const buyer = await adminDb.collection("users").doc(userId).get();
@@ -151,7 +169,8 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ success: true, ids });
 }
 
-// El vendedor acepta o rechaza una solicitud pendiente
+// accepted / rejected: lo hace el vendedor sobre un pedido pending
+// cancelled: lo hace el comprador o el vendedor sobre un pedido accepted
 export async function PATCH(req: NextRequest) {
   const adminDb = getAdminDb();
   if (!adminDb) return NextResponse.json({ error: "Firebase not configured" }, { status: 500 });
@@ -160,20 +179,58 @@ export async function PATCH(req: NextRequest) {
   if (typeof userId === "object") return userId;
 
   const { id, status } = await req.json();
-  if (typeof id !== "string" || (status !== "accepted" && status !== "rejected")) {
-    return NextResponse.json({ error: "id y status ('accepted' o 'rejected') son obligatorios" }, { status: 400 });
+  if (typeof id !== "string" || !["accepted", "rejected", "cancelled"].includes(status)) {
+    return NextResponse.json(
+      { error: "id y status ('accepted', 'rejected' o 'cancelled') son obligatorios" },
+      { status: 400 },
+    );
   }
 
-  const ref = adminDb.collection("orders").doc(id);
-  const order = (await ref.get()).data();
-  if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (!order.sellerIds?.includes(userId)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-  if (order.status !== "pending") {
-    return NextResponse.json({ error: "Esta solicitud ya fue respondida" }, { status: 409 });
-  }
+  const orderRef = adminDb.collection("orders").doc(id);
 
-  await ref.update({ status, updatedAt: new Date().toISOString() });
+  // transacción: dos aceptaciones simultáneas no pueden reservar el mismo producto
+  const failure = await adminDb.runTransaction(async (tx) => {
+    const order = (await tx.get(orderRef)).data();
+    if (!order) return { code: 404, message: "Not found" };
+
+    const isSeller = order.sellerIds?.includes(userId);
+    const isBuyer = order.userId === userId;
+    const productRefs = (order.items as OrderItem[]).map((i) =>
+      adminDb.collection("products").doc(i.productId),
+    );
+    const products = await tx.getAll(...productRefs);
+
+    if (status === "cancelled") {
+      if (!isSeller && !isBuyer) return { code: 403, message: "Forbidden" };
+      if (order.status !== "accepted") {
+        return { code: 409, message: "Solo se puede cancelar una solicitud aceptada" };
+      }
+      // libera los productos que este pedido tenía reservados
+      products.forEach((snap) => {
+        if (snap.data()?.reservedOrderId === id) {
+          tx.update(snap.ref, { reservedOrderId: FieldValue.delete() });
+        }
+      });
+    } else {
+      if (!isSeller) return { code: 403, message: "Forbidden" };
+      if (order.status !== "pending") {
+        return { code: 409, message: "Esta solicitud ya fue respondida" };
+      }
+      if (status === "accepted") {
+        for (const snap of products) {
+          const reserved = snap.data()?.reservedOrderId;
+          if (!snap.exists || (reserved && reserved !== id)) {
+            return { code: 409, message: "Un producto de esta solicitud ya no está disponible" };
+          }
+        }
+        products.forEach((snap) => tx.update(snap.ref, { reservedOrderId: id }));
+      }
+    }
+
+    tx.update(orderRef, { status, updatedAt: new Date().toISOString() });
+    return null;
+  });
+
+  if (failure) return NextResponse.json({ error: failure.message }, { status: failure.code });
   return NextResponse.json({ success: true, status });
 }

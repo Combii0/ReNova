@@ -12,4 +12,5 @@ export type Product = {
   donation?: boolean;
   createdBy?: string;
   specifications?: string;
+  reservedOrderId?: string;
 };

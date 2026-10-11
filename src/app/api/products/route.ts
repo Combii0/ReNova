@@ -59,6 +59,9 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
+    // Producto reservado: no sale en el market (el dueño y el admin sí lo ven)
+    if (data.reservedOrderId && !isAdmin && !mine) continue;
+
     const product: Record<string, unknown> = { id: snap.id, ...data };
 
     if (isAdmin || mine) {
@@ -127,6 +130,7 @@ export async function POST(req: NextRequest) {
     productData.specifications = encrypt(body.specifications as string);
   }
   delete productData["encryptedDescription"]; // legacy
+  delete productData["reservedOrderId"]; // solo el servidor reserva productos
 
   const docRef = await adminDb.collection("products").add(productData);
   return NextResponse.json({ id: docRef.id, success: true });
