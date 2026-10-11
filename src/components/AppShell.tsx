@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { applyTheme, getCookie, type AppTheme } from "@/lib/cookies";
-import { useUser, logoutClient } from "@/lib/auth";
+import { useUser, logoutClient, getIdToken } from "@/lib/auth";
 import { useCart } from "@/lib/useCart";
 import CreateProductModal from "@/components/CreateProductModal";
 
@@ -38,6 +38,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isCreateProductOpen, setIsCreateProductOpen] = useState(false);
+  const [unread, setUnread] = useState({ store: false, purchases: false });
+
+  const anyUnread = !!user && (unread.store || unread.purchases);
 
   useEffect(() => {
     const theme = (getCookie("renova-theme") as AppTheme | null) ?? "light";
@@ -49,18 +52,49 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     setIsProfileOpen(false);
   }, [pathname]);
 
+  // Puntos rojos: se consulta cada 15 segundos y cuando una página marca pedidos como vistos
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+
+    async function checkUnread() {
+      try {
+        const token = await getIdToken(user);
+        const res = await fetch("/api/orders?unread=1", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok && !cancelled) setUnread(await res.json());
+      } catch {
+        // sin conexión: se intenta de nuevo en la próxima consulta
+      }
+    }
+
+    checkUnread();
+    const timer = setInterval(checkUnread, 15000);
+    window.addEventListener("renova-orders-change", checkUnread);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+      window.removeEventListener("renova-orders-change", checkUnread);
+    };
+  }, [user]);
+
   return (
     <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)]">
       <header className="sticky top-0 z-[70] border-b border-[var(--app-border)] bg-[var(--app-surface)]/95 backdrop-blur">
         <div className="flex w-full items-center gap-2 px-2 py-3 sm:gap-3 sm:px-3 lg:px-4">
           <button
             type="button"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[var(--app-text)] transition hover:bg-[var(--app-soft)]"
+            className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[var(--app-text)] transition hover:bg-[var(--app-soft)]"
             onClick={() => setIsMenuOpen((open) => !open)}
             aria-expanded={isMenuOpen}
             aria-label="Abrir menu"
           >
             <Menu size={24} strokeWidth={2.5} />
+            {anyUnread && (
+              <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500" />
+            )}
           </button>
 
           <Link
@@ -214,13 +248,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           {navigation.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
+            const showDot =
+              !!user &&
+              ((item.href === "/mi-tienda" && unread.store) ||
+                (item.href === "/pedidos" && unread.purchases));
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsMenuOpen(false)}
-                className={`flex h-12 items-center gap-3 rounded-2xl px-4 text-sm font-black transition ${
+                className={`relative flex h-12 items-center gap-3 rounded-2xl px-4 text-sm font-black transition ${
                   isActive
                     ? "bg-[var(--brand)] text-white"
                     : "text-[var(--app-text)] hover:bg-[var(--app-soft)]"
@@ -228,6 +266,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               >
                 <Icon size={19} />
                 {item.label}
+                {showDot && (
+                  <span className="absolute right-3 top-2 h-2.5 w-2.5 rounded-full bg-red-500" />
+                )}
               </Link>
             );
           })}

@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useUser, getIdToken } from "@/lib/auth";
+import { markOrdersRead } from "@/lib/orders";
 
 type Purchase = {
   id: string;
   status: string;
   total: number;
   createdAt: string;
+  unreadBuyer?: boolean;
   items: { name: string; quantity: number }[];
 };
 
@@ -37,6 +39,12 @@ export default function MyPurchases() {
       if (res.ok) {
         const data: Purchase[] = await res.json();
         setOrders(data.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+        setLoading(false);
+
+        // los estados ya se ven en pantalla: se marcan como vistos
+        // (en esta carga siguen con su puntito para saber cuáles son nuevos)
+        await markOrdersRead(token, data.filter((o) => o.unreadBuyer).map((o) => o.id));
+        return;
       }
       setLoading(false);
     })();
@@ -82,8 +90,9 @@ export default function MyPurchases() {
             {o.items.map((i) => `${i.name} x${i.quantity}`).join(", ")}
           </p>
           <div className="mt-2 flex items-center justify-between gap-3">
-            <p className="text-xs font-black uppercase text-[var(--brand)]">
+            <p className="flex items-center gap-2 text-xs font-black uppercase text-[var(--brand)]">
               {statusLabels[o.status] ?? o.status}
+              {o.unreadBuyer && <span className="h-2.5 w-2.5 rounded-full bg-red-500" />}
             </p>
             {o.status === "accepted" && (
               <button
