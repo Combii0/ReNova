@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useUser, getIdToken } from "@/lib/auth";
 import { markOrdersRead } from "@/lib/orders";
 import CreateProductModal from "@/components/CreateProductModal";
+import OrderChat from "@/components/OrderChat";
 import type { Product } from "@/types/products";
 
 type SellerOrder = {
@@ -37,6 +38,7 @@ export default function MySales() {
   const [orders, setOrders] = useState<SellerOrder[]>([]);
   const [editing, setEditing] = useState<Product | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [chatId, setChatId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -77,6 +79,9 @@ export default function MySales() {
 
   const orphanOrders = orders.filter((o) => !products.some((p) => isFor(o, p.id)));
 
+  // el chat solo existe mientras la solicitud siga aceptada
+  const chatOrder = orders.find((o) => o.id === chatId && o.status === "accepted");
+
   async function openProduct(productId: string) {
     const next = openId === productId ? null : productId;
     setOpenId(next);
@@ -90,7 +95,10 @@ export default function MySales() {
     setOrders((prev) => prev.map((o) => (unseen.includes(o.id) ? { ...o, unreadSeller: false } : o)));
   }
 
-  async function changeStatus(id: string, status: "accepted" | "rejected" | "cancelled") {
+  async function changeStatus(
+    id: string,
+    status: "accepted" | "rejected" | "cancelled",
+  ): Promise<boolean> {
     setError("");
     const token = await getIdToken(user);
     const res = await fetch("/api/orders", {
@@ -101,7 +109,7 @@ export default function MySales() {
     const data = await res.json();
     if (!res.ok) {
       setError(data.error ?? "No se pudo actualizar la solicitud");
-      return;
+      return false;
     }
 
     const order = orders.find((o) => o.id === id);
@@ -117,6 +125,7 @@ export default function MySales() {
         ),
       );
     }
+    return true;
   }
 
   // lockedText: motivo por el que no se puede aceptar (solo queda Rechazar)
@@ -168,12 +177,20 @@ export default function MySales() {
               {statusLabels[o.status] ?? o.status}
             </p>
             {o.status === "accepted" && (
-              <button
-                onClick={() => changeStatus(o.id, "cancelled")}
-                className="rounded-full bg-red-500/10 px-4 py-2 text-xs font-black text-red-600"
-              >
-                Cancelar
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setChatId(o.id)}
+                  className="rounded-full bg-[var(--app-text)] px-4 py-2 text-xs font-black text-[var(--app-bg)]"
+                >
+                  Chat
+                </button>
+                <button
+                  onClick={() => changeStatus(o.id, "cancelled")}
+                  className="rounded-full bg-red-500/10 px-4 py-2 text-xs font-black text-red-600"
+                >
+                  Cancelar
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -285,6 +302,15 @@ export default function MySales() {
           user={user}
           product={editing}
           onClose={() => setEditing(null)}
+        />
+      )}
+
+      {chatOrder && (
+        <OrderChat
+          orderId={chatOrder.id}
+          title={chatOrder.buyerName || "Comprador"}
+          onClose={() => setChatId(null)}
+          onCancel={() => changeStatus(chatOrder.id, "cancelled")}
         />
       )}
     </section>

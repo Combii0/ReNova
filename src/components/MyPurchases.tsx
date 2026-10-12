@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useUser, getIdToken } from "@/lib/auth";
 import { markOrdersRead } from "@/lib/orders";
+import OrderChat from "@/components/OrderChat";
 
 type Purchase = {
   id: string;
@@ -25,6 +26,7 @@ const statusLabels: Record<string, string> = {
 export default function MyPurchases() {
   const user = useUser();
   const [orders, setOrders] = useState<Purchase[]>([]);
+  const [chatId, setChatId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -50,7 +52,10 @@ export default function MyPurchases() {
     })();
   }, [user]);
 
-  async function cancelOrder(id: string) {
+  // el chat solo existe mientras la solicitud siga aceptada
+  const chatOrder = orders.find((o) => o.id === chatId && o.status === "accepted");
+
+  async function cancelOrder(id: string): Promise<boolean> {
     setError("");
     const token = await getIdToken(user);
     const res = await fetch("/api/orders", {
@@ -61,9 +66,10 @@ export default function MyPurchases() {
     const data = await res.json();
     if (!res.ok) {
       setError(data.error ?? "No se pudo cancelar la solicitud");
-      return;
+      return false;
     }
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: "cancelled" } : o)));
+    return true;
   }
 
   if (!user) return <p className={note}>Inicia sesión para ver tus compras.</p>;
@@ -95,16 +101,33 @@ export default function MyPurchases() {
               {o.unreadBuyer && <span className="h-2.5 w-2.5 rounded-full bg-red-500" />}
             </p>
             {o.status === "accepted" && (
-              <button
-                onClick={() => cancelOrder(o.id)}
-                className="rounded-full bg-red-500/10 px-4 py-2 text-xs font-black text-red-600"
-              >
-                Cancelar
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setChatId(o.id)}
+                  className="rounded-full bg-[var(--app-text)] px-4 py-2 text-xs font-black text-[var(--app-bg)]"
+                >
+                  Chat
+                </button>
+                <button
+                  onClick={() => cancelOrder(o.id)}
+                  className="rounded-full bg-red-500/10 px-4 py-2 text-xs font-black text-red-600"
+                >
+                  Cancelar
+                </button>
+              </div>
             )}
           </div>
         </article>
       ))}
+
+      {chatOrder && (
+        <OrderChat
+          orderId={chatOrder.id}
+          title={chatOrder.items.map((i) => i.name).join(", ")}
+          onClose={() => setChatId(null)}
+          onCancel={() => cancelOrder(chatOrder.id)}
+        />
+      )}
     </div>
   );
 }
