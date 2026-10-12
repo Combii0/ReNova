@@ -32,7 +32,7 @@ async function requireUserId(req: NextRequest): Promise<string | NextResponse> {
 }
 
 // ?as=seller devuelve los pedidos que contienen productos del usuario
-// ?unread=1 devuelve si hay pedidos sin ver como vendedor (store) y como comprador (purchases)
+// ?unread=1 devuelve si hay pedidos o mensajes sin ver como vendedor (store) y como comprador (purchases)
 export async function GET(req: NextRequest) {
   const adminDb = getAdminDb();
   if (!adminDb) return NextResponse.json({ error: "Firebase not configured" }, { status: 500 });
@@ -46,8 +46,8 @@ export async function GET(req: NextRequest) {
       adminDb.collection("orders").where("userId", "==", userId).get(),
     ]);
     return NextResponse.json({
-      store: sold.docs.some((d) => d.data().unreadSeller),
-      purchases: bought.docs.some((d) => d.data().unreadBuyer),
+      store: sold.docs.some((d) => d.data().unreadSeller || d.data().unreadChatSeller),
+      purchases: bought.docs.some((d) => d.data().unreadBuyer || d.data().unreadChatBuyer),
     });
   }
 

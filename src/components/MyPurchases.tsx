@@ -11,6 +11,7 @@ type Purchase = {
   total: number;
   createdAt: string;
   unreadBuyer?: boolean;
+  unreadChatBuyer?: boolean;
   items: { name: string; quantity: number }[];
 };
 
@@ -54,6 +55,12 @@ export default function MyPurchases() {
 
   // el chat solo existe mientras la solicitud siga aceptada
   const chatOrder = orders.find((o) => o.id === chatId && o.status === "accepted");
+
+  // al entrar al chat sus mensajes quedan vistos (el servidor apaga el aviso al cargarlos)
+  function openChat(id: string) {
+    setChatId(id);
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, unreadChatBuyer: false } : o)));
+  }
 
   async function cancelOrder(id: string): Promise<boolean> {
     setError("");
@@ -103,10 +110,13 @@ export default function MyPurchases() {
             {o.status === "accepted" && (
               <div className="flex gap-2">
                 <button
-                  onClick={() => setChatId(o.id)}
-                  className="rounded-full bg-[var(--app-text)] px-4 py-2 text-xs font-black text-[var(--app-bg)]"
+                  onClick={() => openChat(o.id)}
+                  className="relative rounded-full bg-[var(--app-text)] px-4 py-2 text-xs font-black text-[var(--app-bg)]"
                 >
                   Chat
+                  {o.unreadChatBuyer && (
+                    <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-red-500" />
+                  )}
                 </button>
                 <button
                   onClick={() => cancelOrder(o.id)}
@@ -124,6 +134,7 @@ export default function MyPurchases() {
         <OrderChat
           orderId={chatOrder.id}
           title={chatOrder.items.map((i) => i.name).join(", ")}
+          isSeller={false}
           onClose={() => setChatId(null)}
           onCancel={() => cancelOrder(chatOrder.id)}
         />

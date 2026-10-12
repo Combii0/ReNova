@@ -1,13 +1,16 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { ImagePlus, X } from "lucide-react";
 import { useUser, getIdToken } from "@/lib/auth";
+import { uploadProductImage } from "@/lib/storage";
 
 type Message = {
   id: string;
   text: string;
+  image?: string;
   mine: boolean;
+  seen: boolean;
   createdAt: string;
 };
 
@@ -16,17 +19,20 @@ const POLL_MS = 5000;
 export default function OrderChat({
   orderId,
   title,
+  isSeller,
   onClose,
   onCancel,
 }: {
   orderId: string;
   title: string;
+  isSeller: boolean;
   onClose: () => void;
   onCancel: () => Promise<boolean>;
 }) {
   const user = useUser();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -36,6 +42,7 @@ export default function OrderChat({
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
+    let firstLoad = true;
 
     async function load() {
       try {
@@ -52,6 +59,12 @@ export default function OrderChat({
         }
         setError("");
         setMessages(data);
+
+        // el servidor ya apagó el aviso de este chat: se actualizan los puntos rojos
+        if (firstLoad) {
+          firstLoad = false;
+          window.dispatchEvent(new Event("renova-orders-change"));
+        }
       } catch {
         if (!cancelled) setError("No se pudieron cargar los mensajes");
       } finally {
@@ -77,16 +90,18 @@ export default function OrderChat({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = input.trim();
-    if (!text || sending) return;
+    if ((!text && !file) || sending) return;
 
     setSending(true);
     setError("");
     try {
       const token = await getIdToken(user);
+      const image = file ? await uploadProductImage(file, token) : undefined;
+
       const res = await fetch(`/api/orders/${orderId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, image }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "No se pudo enviar el mensaje");
@@ -94,6 +109,7 @@ export default function OrderChat({
       // si el polling ya trajo este mensaje no se agrega otra vez
       setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data]));
       setInput("");
+      setFile(null);
     } catch (err: unknown) {
       setError((err as Error).message || "No se pudo enviar el mensaje");
     } finally {
@@ -151,12 +167,22 @@ export default function OrderChat({
                   : "bg-[var(--app-surface)] text-[var(--app-text)]"
               }`}
             >
-              <p className="whitespace-pre-wrap break-words">{message.text}</p>
+              {message.image && (
+                <a href={message.image} target="_blank" rel="noreferrer">
+                  <img
+                    src={message.image}
+                    alt="Imagen enviada"
+                    className="mb-2 max-h-60 w-full rounded-2xl object-cover"
+                  />
+                </a>
+              )}
+              {message.text && <p className="whitespace-pre-wrap break-words">{message.text}</p>}
               <p className="mt-1 text-right text-[10px] font-semibold opacity-70">
                 {new Date(message.createdAt).toLocaleTimeString("es-CO", {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
+                {message.mine && message.seen && " · Visto"}
               </p>
             </div>
           ))}
@@ -164,10 +190,34 @@ export default function OrderChat({
 
         {error && <p className="px-4 pt-3 text-sm font-semibold text-red-500">{error}</p>}
 
+        {file && (
+          <div className="flex items-center justify-between gap-2 px-4 pt-3 text-xs font-bold text-[var(--app-muted)]">
+            <span className="truncate">{file.name}</span>
+            <button type="button" onClick={() => setFile(null)} aria-label="Quitar imagen">
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
         <form
-          className="flex gap-2 border-t border-[var(--app-border)] p-3"
+          className="flex items-center gap-2 border-t border-[var(--app-border)] p-3"
           onSubmit={handleSubmit}
         >
+          {isSeller && (
+            <label className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[var(--app-soft)] text-[var(--app-text)]">
+              <ImagePlus size={18} />
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                disabled={sending}
+                onChange={(e) => {
+                  setFile(e.target.files?.[0] ?? null);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          )}
           <input
             className="min-w-0 flex-1 bg-transparent px-3 text-sm font-bold text-[var(--app-text)] outline-none placeholder:text-[var(--app-muted)]"
             placeholder="Escribe un mensaje"
@@ -178,7 +228,7 @@ export default function OrderChat({
           />
           <button
             type="submit"
-            disabled={sending || !input.trim()}
+            disabled={sending || (!input.trim() && !file)}
             className="h-11 rounded-full bg-[var(--brand)] px-5 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
             Enviar

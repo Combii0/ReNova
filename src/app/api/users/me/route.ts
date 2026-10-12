@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Timestamp } from "firebase-admin/firestore";
+import { Timestamp, FieldValue } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
 import { encrypt, decrypt } from "@/lib/crypto";
 
@@ -171,7 +171,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(response);
 }
 
-// ── DELETE elimina la cuenta, sus pedidos y su perfil ────────────────────────
+// ── DELETE elimina la cuenta, sus pedidos (con sus mensajes) y su perfil ─────
 
 export async function DELETE(req: NextRequest) {
   const adminAuth = getAdminAuth();
@@ -185,8 +185,27 @@ export async function DELETE(req: NextRequest) {
 
   const orders = await adminDb.collection("orders").where("userId", "==", userId).get();
 
+  // los productos que estos pedidos tenían reservados vuelven a estar disponibles
+  const release = adminDb.batch();
+  for (const order of orders.docs) {
+    const items = (order.data().items ?? []) as { productId: string }[];
+    if (items.length === 0) continue;
+
+    const products = await adminDb.getAll(
+      ...items.map((i) => adminDb.collection("products").doc(i.productId)),
+    );
+    products.forEach((snap) => {
+      if (snap.data()?.reservedOrderId === order.id) {
+        release.update(snap.ref, { reservedOrderId: FieldValue.delete() });
+      }
+    });
+  }
+  await release.commit();
+
+  // cada pedido se borra junto con su subcolección de mensajes
+  await Promise.all(orders.docs.map((order) => adminDb.recursiveDelete(order.ref)));
+
   const batch = adminDb.batch();
-  orders.docs.forEach((doc) => batch.delete(doc.ref));
   batch.delete(adminDb.collection("users").doc(userId));
   batch.delete(adminDb.collection("twoFactorCodes").doc(userId));
   await batch.commit();

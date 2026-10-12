@@ -15,6 +15,7 @@ type SellerOrder = {
   total: number;
   createdAt: string;
   unreadSeller?: boolean;
+  unreadChatSeller?: boolean;
   items: { productId: string; name: string; quantity: number }[];
 };
 
@@ -93,6 +94,12 @@ export default function MySales() {
 
     await markOrdersRead(await getIdToken(user), unseen);
     setOrders((prev) => prev.map((o) => (unseen.includes(o.id) ? { ...o, unreadSeller: false } : o)));
+  }
+
+  // al entrar al chat sus mensajes quedan vistos (el servidor apaga el aviso al cargarlos)
+  function openChat(id: string) {
+    setChatId(id);
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, unreadChatSeller: false } : o)));
   }
 
   async function changeStatus(
@@ -179,10 +186,13 @@ export default function MySales() {
             {o.status === "accepted" && (
               <div className="flex gap-2">
                 <button
-                  onClick={() => setChatId(o.id)}
-                  className="rounded-full bg-[var(--app-text)] px-4 py-2 text-xs font-black text-[var(--app-bg)]"
+                  onClick={() => openChat(o.id)}
+                  className="relative rounded-full bg-[var(--app-text)] px-4 py-2 text-xs font-black text-[var(--app-bg)]"
                 >
                   Chat
+                  {o.unreadChatSeller && (
+                    <span className={`${redDot} absolute -right-1 -top-1`} />
+                  )}
                 </button>
                 <button
                   onClick={() => changeStatus(o.id, "cancelled")}
@@ -234,7 +244,9 @@ export default function MySales() {
                   >
                     <p className="flex items-center gap-2 font-black text-[var(--app-text)]">
                       <span className="truncate">{p.name}</span>
-                      {requests.some((o) => o.unreadSeller) && <span className={redDot} />}
+                      {requests.some((o) => o.unreadSeller || o.unreadChatSeller) && (
+                        <span className={redDot} />
+                      )}
                     </p>
                     <p className="text-xs font-bold text-[var(--app-muted)]">{p.price}</p>
                     <p className="mt-1 text-xs font-black uppercase text-[var(--brand)]">
@@ -309,6 +321,7 @@ export default function MySales() {
         <OrderChat
           orderId={chatOrder.id}
           title={chatOrder.buyerName || "Comprador"}
+          isSeller
           onClose={() => setChatId(null)}
           onCancel={() => changeStatus(chatOrder.id, "cancelled")}
         />
