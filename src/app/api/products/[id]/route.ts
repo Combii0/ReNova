@@ -27,6 +27,10 @@ export async function GET(
   if (typeof data.createdBy === "string") {
     const seller = await adminDb.collection("users").doc(data.createdBy).get();
     product.sellerName = seller.data()?.displayName ?? null;
+
+    // rating del vendedor (solo si ya tiene calificaciones)
+    const { ratingAvg, ratingCount } = seller.data() ?? {};
+    if (ratingCount) product.sellerRating = { avg: ratingAvg, count: ratingCount };
   }
 
   return NextResponse.json(product);

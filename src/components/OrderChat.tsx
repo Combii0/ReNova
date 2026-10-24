@@ -20,14 +20,18 @@ export default function OrderChat({
   orderId,
   title,
   isSeller,
+  confirmed,
   onClose,
   onCancel,
+  onComplete,
 }: {
   orderId: string;
   title: string;
   isSeller: boolean;
+  confirmed: boolean;
   onClose: () => void;
   onCancel: () => Promise<boolean>;
+  onComplete: () => Promise<boolean>;
 }) {
   const user = useUser();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -123,6 +127,18 @@ export default function OrderChat({
     if (!ok) setError("No se pudo cancelar la solicitud");
   }
 
+  async function handleComplete() {
+    if (
+      !window.confirm(
+        "¿Confirmar que la entrega se realizó? Cuando ambos confirmen, el pedido se completa, el producto deja de estar disponible y el chat se cierra.",
+      )
+    ) {
+      return;
+    }
+    const ok = await onComplete();
+    if (!ok) setError("No se pudo confirmar la entrega");
+  }
+
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/35 p-4">
       <div className="flex h-[80vh] max-h-[640px] w-full max-w-md flex-col overflow-hidden rounded-[1.5rem] bg-[var(--app-surface)] shadow-2xl">
@@ -132,6 +148,13 @@ export default function OrderChat({
             <h2 className="truncate text-lg font-black text-[var(--app-text)]">{title}</h2>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <button
+              onClick={handleComplete}
+              disabled={confirmed}
+              className="rounded-full bg-[var(--app-text)] px-3 py-2 text-xs font-black text-[var(--app-bg)] disabled:opacity-60"
+            >
+              {confirmed ? "Esperando confirmación" : "Confirmar entrega"}
+            </button>
             <button
               onClick={handleCancel}
               className="rounded-full bg-red-500/10 px-3 py-2 text-xs font-black text-red-600"

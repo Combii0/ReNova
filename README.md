@@ -1,52 +1,73 @@
-# ReNova
+# ♻️ ReNova
 
+**ReNova** es una plataforma web colombiana donde las personas dan una segunda vida a los objetos que ya no usan.
 
-// ENG SECTION //
+La **donación es el centro de la experiencia**: cualquier producto puede publicarse sin precio para que llegue a quien lo necesita. Quien prefiera vender también puede hacerlo, pero la idea de fondo es que nada útil termine en la basura.
 
-ReNova is a sustainability-driven marketplace designed to give products a second life while making buying and selling used items simple, safe, and rewarding. Built around the principles of the circular economy, it connects individuals and businesses, helping reduce waste, extend the lifespan of products, and promote responsible consumption.
+> Haz que cada objeto tenga una nueva historia.
 
-Unlike traditional marketplaces, ReNova is more than just a platform for second-hand goods—it is a community committed to creating a positive environmental impact. Every transaction represents an opportunity to keep valuable items in circulation instead of sending them to landfills, allowing users to save money while contributing to a greener future.
+---
 
-The platform is being developed as a modern React web application, initially powered by OpenStreetMap to facilitate local transactions and item discovery. An integrated messaging system enables seamless communication between buyers, sellers, and delivery services, making every exchange more transparent and convenient.
+## 🚀 ¿Qué hace ReNova?
 
-One of ReNova's defining features is its Eco-Friendly Certification, a recognition system that rewards users and organizations for their contribution to sustainable practices. As members buy, sell, and reuse products, they build a measurable environmental impact that can strengthen their reputation and encourage continued participation. Looking ahead, ReNova aims to collaborate with public institutions and environmental organizations to explore the possibility of transforming this recognition into an officially acknowledged sustainability certification.
+ReNova permite a los usuarios:
 
-Renova's mission is simple yet powerful: to make sustainability accessible through technology. By combining a user-friendly marketplace with environmental incentives, the platform empowers people to make conscious purchasing decisions while helping build a cleaner, more circular economy.
+- 🎁 Publicar productos como **donación** o con precio.
+- 🛒 Explorar el market y enviar **solicitudes** desde el carrito.
+- ✅ Aceptar o rechazar solicitudes desde **Mi tienda**.
+- 💬 Coordinar la entrega mediante un **chat** entre comprador y vendedor.
+- 🤖 Pedir ayuda a **Helpy**, el asistente con IA de la plataforma.
 
-# Give It a Second Life. ;)
+En ReNova no hay pagos dentro de la aplicación: tanto las compras como las donaciones siguen el mismo flujo de solicitud.
 
-ReNova
+---
 
-// SECCIÓN EN ESPAÑOL //
+## 🔄 ¿Cómo funciona?
 
-ReNova es un marketplace impulsado por la sostenibilidad, diseñado para dar una segunda vida a los productos mientras hace que comprar y vender artículos usados sea una experiencia sencilla, segura y gratificante. Basada en los principios de la economía circular, la plataforma conecta a personas y empresas, ayudando a reducir los residuos, prolongar la vida útil de los productos y fomentar un consumo responsable.
+1. Un **socio** publica un producto con foto, categoría y descripción, y puede marcarlo como donación.
+2. Los compradores abren el detalle del producto y lo agregan al carrito.
+3. Se envía una solicitud al vendedor, que la acepta o la rechaza.
+4. Si la acepta, el producto queda **reservado** y sale del market.
+5. Ambos hablan por el chat para acordar la entrega.
 
-A diferencia de los marketplaces tradicionales, ReNova es mucho más que una plataforma para comprar y vender artículos de segunda mano: es una comunidad comprometida con generar un impacto positivo en el medio ambiente. Cada transacción representa una oportunidad para mantener objetos valiosos en circulación en lugar de que terminen en un relleno sanitario, permitiendo que los usuarios ahorren dinero mientras contribuyen a un futuro más sostenible.
+---
 
-La plataforma está siendo desarrollada como una moderna aplicación web en React y, en su primera versión, utilizará OpenStreetMap para facilitar las transacciones locales y el descubrimiento de productos cercanos. Además, contará con un sistema de mensajería integrado que permitirá una comunicación fluida entre compradores, vendedores y servicios de entrega, haciendo que cada intercambio sea más transparente y conveniente.
+## 🔐 Seguridad
 
-Una de las características más importantes de ReNova es su Certificación Eco-Friendly, un sistema de reconocimiento que recompensa a personas y organizaciones por su compromiso con las prácticas sostenibles. A medida que los usuarios compran, venden y reutilizan productos, generan un impacto ambiental medible que fortalece su reputación e incentiva la participación continua. A futuro, ReNova busca colaborar con entidades públicas y organizaciones ambientales para explorar la posibilidad de convertir esta certificación en un reconocimiento oficial respaldado por instituciones.
+- Verificación en dos pasos con código de 6 dígitos enviado al correo.
+- Inicio de sesión con Google.
+- Teléfono, dirección y mensajes del chat guardados cifrados.
+- Direcciones validadas con Google Maps (solo Colombia).
+- Roles: `comprador`, `socio` y `admin`. Se pasa a socio al registrar fecha de nacimiento (16 años o más), celular y dirección.
 
-La misión de ReNova es simple, pero poderosa: hacer que la sostenibilidad sea accesible a través de la tecnología. Al combinar un marketplace intuitivo con incentivos ambientales, la plataforma permite que las personas tomen decisiones de consumo más conscientes mientras contribuyen a construir una economía más limpia, responsable y circular.
+---
 
-Dale otra vida.
+## Equipo de desarrollo
 
+| Rol | Nombre |
+|:--|:--|
+| 👨‍💻 Frontend | **Juan Andres Granados** |
+| 👨‍💻 Backend | **Nicolas Rojas** |
+| 👨‍💻 Fullstack | **Santiago Hernandez** |
+| 👩‍💼 Scrum Master | **Paula Solano** |
+| 👩‍🎨 Diseñadora UX/UI | **Mariana Castro** |
 
-## Stack
+---
 
-- Next.js
-- React
-- TypeScript
-- Tailwind CSS
-- Vercel
-- Firebase
-<<<<<<< HEAD
-- Gemini API
+## ⚙️ Tecnologías principales
 
-## Environment variables
+```bash
+Frontend: Next.js, React, TypeScript y Tailwind CSS
+Backend: Firebase (Authentication y Firestore) y API Routes de Next.js
+Imágenes: Cloudinary
+Mapas y direcciones: Google Maps y Google Places
+Correos: Nodemailer
+Asistente con IA: Gemini API
+Despliegue de Aplicación: Vercel
+```
 
-`NEXT_PUBLIC_FIREBASE_*` variables are used by Firebase in the browser.
-`GEMINI_API_KEY` is used only by Next.js API routes and must never be exposed in the browser. `GEMMA_API_KEY` remains as a temporary fallback for existing installations.
-=======
-- Gamma API
->>>>>>> nico-database-integration
+---
+
+## 🛠️ Estado del proyecto
+
+ReNova está en desarrollo y por ahora solo funciona en Colombia. Próximamente: calificaciones entre usuarios y confirmación de entrega por ambas partes.

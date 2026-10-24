@@ -5,6 +5,7 @@ import { useUser, getIdToken } from "@/lib/auth";
 import { markOrdersRead } from "@/lib/orders";
 import CreateProductModal from "@/components/CreateProductModal";
 import OrderChat from "@/components/OrderChat";
+import RateOrder from "@/components/RateOrder";
 import type { Product } from "@/types/products";
 
 type SellerOrder = {
@@ -16,6 +17,7 @@ type SellerOrder = {
   createdAt: string;
   unreadSeller?: boolean;
   unreadChatSeller?: boolean;
+  sellerConfirmed?: boolean;
   items: { productId: string; name: string; quantity: number }[];
 };
 
@@ -28,6 +30,7 @@ const statusLabels: Record<string, string> = {
   accepted: "Aceptado",
   rejected: "Rechazado",
   cancelled: "Cancelado",
+  completed: "Completado",
 };
 
 const isFor = (order: SellerOrder, productId?: string) =>
@@ -37,6 +40,7 @@ export default function MySales() {
   const user = useUser();
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<SellerOrder[]>([]);
+  const [rated, setRated] = useState<Record<string, number>>({});
   const [editing, setEditing] = useState<Product | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [chatId, setChatId] = useState<string | null>(null);
@@ -49,12 +53,16 @@ export default function MySales() {
     (async () => {
       const token = await getIdToken(user);
       const headers = { Authorization: `Bearer ${token}` };
-      const [productsRes, ordersRes] = await Promise.all([
+      const [productsRes, ordersRes, ratingsRes] = await Promise.all([
         fetch("/api/products?mine=1", { headers }),
         fetch("/api/orders?as=seller", { headers }),
+        fetch("/api/ratings", { headers }),
       ]);
       const loadedProducts: Product[] = productsRes.ok ? await productsRes.json() : [];
       const loadedOrders: SellerOrder[] = ordersRes.ok ? await ordersRes.json() : [];
+      const loadedRatings: { orderId: string; stars: number }[] = ratingsRes.ok
+        ? await ratingsRes.json()
+        : [];
 
       // las solicitudes de productos que ya no existen se ven de inmediato: se marcan como vistas
       const orphanUnread = productsRes.ok
@@ -68,6 +76,7 @@ export default function MySales() {
       setOrders(
         loadedOrders.map((o) => (orphanUnread.includes(o.id) ? { ...o, unreadSeller: false } : o)),
       );
+      setRated(Object.fromEntries(loadedRatings.map((r) => [r.orderId, r.stars])));
       setLoading(false);
     })();
   }, [user]);
@@ -104,7 +113,7 @@ export default function MySales() {
 
   async function changeStatus(
     id: string,
-    status: "accepted" | "rejected" | "cancelled",
+    status: "accepted" | "rejected" | "cancelled" | "completed",
   ): Promise<boolean> {
     setError("");
     const token = await getIdToken(user);
@@ -120,6 +129,21 @@ export default function MySales() {
     }
 
     const order = orders.find((o) => o.id === id);
+
+    // completar: el pedido termina cuando también confirma el comprador (el servidor borra el producto)
+    if (status === "completed") {
+      const finished = data.status === "completed";
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === id ? { ...o, sellerConfirmed: true, ...(finished ? { status: "completed" } : {}) } : o,
+        ),
+      );
+      if (finished) {
+        setProducts((prev) => prev.filter((p) => !(order && isFor(order, p.id))));
+      }
+      return true;
+    }
+
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
 
     // al aceptar se reserva el producto del pedido, al cancelar se libera
@@ -137,7 +161,7 @@ export default function MySales() {
 
   // lockedText: motivo por el que no se puede aceptar (solo queda Rechazar)
   function renderRequest(o: SellerOrder, lockedText?: string) {
-    const active = o.status === "pending" || o.status === "accepted";
+    const active = o.status === "pending" || o.status === "accepted" || o.status === "completed";
 
     return (
       <article
@@ -148,7 +172,7 @@ export default function MySales() {
           {o.buyerName || "Comprador"}
           {o.buyerRating && (
             <span className="ml-2 text-xs font-bold text-amber-700">
-              ★ {o.buyerRating.avg.toFixed(1)} ({o.buyerRating.count})
+              ★ {o.buyerRating.avg.toFixed(2)} ({o.buyerRating.count})
             </span>
           )}
         </p>
@@ -201,6 +225,14 @@ export default function MySales() {
                   Cancelar
                 </button>
               </div>
+            )}
+            {o.status === "completed" && (
+              <RateOrder
+                user={user}
+                orderId={o.id}
+                given={rated[o.id]}
+                onRated={(stars) => setRated((prev) => ({ ...prev, [o.id]: stars }))}
+              />
             )}
           </div>
         )}
@@ -322,8 +354,10 @@ export default function MySales() {
           orderId={chatOrder.id}
           title={chatOrder.buyerName || "Comprador"}
           isSeller
+          confirmed={!!chatOrder.sellerConfirmed}
           onClose={() => setChatId(null)}
           onCancel={() => changeStatus(chatOrder.id, "cancelled")}
+          onComplete={() => changeStatus(chatOrder.id, "completed")}
         />
       )}
     </section>

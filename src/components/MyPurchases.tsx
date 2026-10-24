@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useUser, getIdToken } from "@/lib/auth";
 import { markOrdersRead } from "@/lib/orders";
 import OrderChat from "@/components/OrderChat";
+import RateOrder from "@/components/RateOrder";
 
 type Purchase = {
   id: string;
@@ -12,6 +13,7 @@ type Purchase = {
   createdAt: string;
   unreadBuyer?: boolean;
   unreadChatBuyer?: boolean;
+  buyerConfirmed?: boolean;
   items: { name: string; quantity: number }[];
 };
 
@@ -22,11 +24,13 @@ const statusLabels: Record<string, string> = {
   accepted: "Aceptado",
   rejected: "Rechazado",
   cancelled: "Cancelado",
+  completed: "Completado",
 };
 
 export default function MyPurchases() {
   const user = useUser();
   const [orders, setOrders] = useState<Purchase[]>([]);
+  const [rated, setRated] = useState<Record<string, number>>({});
   const [chatId, setChatId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -36,9 +40,17 @@ export default function MyPurchases() {
 
     (async () => {
       const token = await getIdToken(user);
-      const res = await fetch("/api/orders", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const headers = { Authorization: `Bearer ${token}` };
+      const [res, ratingsRes] = await Promise.all([
+        fetch("/api/orders", { headers }),
+        fetch("/api/ratings", { headers }),
+      ]);
+
+      if (ratingsRes.ok) {
+        const mine: { orderId: string; stars: number }[] = await ratingsRes.json();
+        setRated(Object.fromEntries(mine.map((r) => [r.orderId, r.stars])));
+      }
+
       if (res.ok) {
         const data: Purchase[] = await res.json();
         setOrders(data.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
@@ -76,6 +88,29 @@ export default function MyPurchases() {
       return false;
     }
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: "cancelled" } : o)));
+    return true;
+  }
+
+  // el pedido se completa cuando confirman el comprador y el vendedor
+  async function completeOrder(id: string): Promise<boolean> {
+    setError("");
+    const token = await getIdToken(user);
+    const res = await fetch("/api/orders", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id, status: "completed" }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? "No se pudo confirmar la entrega");
+      return false;
+    }
+    const finished = data.status === "completed";
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === id ? { ...o, buyerConfirmed: true, ...(finished ? { status: "completed" } : {}) } : o,
+      ),
+    );
     return true;
   }
 
@@ -126,6 +161,14 @@ export default function MyPurchases() {
                 </button>
               </div>
             )}
+            {o.status === "completed" && (
+              <RateOrder
+                user={user}
+                orderId={o.id}
+                given={rated[o.id]}
+                onRated={(stars) => setRated((prev) => ({ ...prev, [o.id]: stars }))}
+              />
+            )}
           </div>
         </article>
       ))}
@@ -135,8 +178,10 @@ export default function MyPurchases() {
           orderId={chatOrder.id}
           title={chatOrder.items.map((i) => i.name).join(", ")}
           isSeller={false}
+          confirmed={!!chatOrder.buyerConfirmed}
           onClose={() => setChatId(null)}
           onCancel={() => cancelOrder(chatOrder.id)}
+          onComplete={() => completeOrder(chatOrder.id)}
         />
       )}
     </div>

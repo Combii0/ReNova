@@ -8,6 +8,7 @@ import { useCart } from "@/lib/useCart";
 type Detail = {
   specifications?: string;
   sellerName?: string | null;
+  sellerRating?: { avg: number; count: number };
   createdAt?: string;
 };
 
@@ -88,7 +89,14 @@ export default function ProductDetailModal({
           ) : (
             <>
               <div className="rounded-2xl bg-[var(--app-soft)] p-4 text-sm font-bold text-[var(--app-text)]">
-                <p>Publicado por: {detail.sellerName ?? product.store ?? "Vendedor"}</p>
+                <p>
+                  Publicado por: {detail.sellerName ?? product.store ?? "Vendedor"}
+                  {detail.sellerRating && (
+                    <span className="ml-2 text-xs font-bold text-amber-700">
+                      ★ {detail.sellerRating.avg.toFixed(2)} ({detail.sellerRating.count})
+                    </span>
+                  )}
+                </p>
                 {product.store && <p className="mt-1">Tienda: {product.store}</p>}
                 {detail.createdAt && (
                   <p className="mt-1">

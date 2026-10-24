@@ -187,6 +187,8 @@ export async function POST(req: NextRequest) {
 // { read: [ids] }: marca pedidos como vistos
 // accepted / rejected: lo hace el vendedor sobre un pedido pending
 // cancelled: lo hace el comprador o el vendedor sobre un pedido accepted
+// completed: lo confirman el comprador y el vendedor sobre un pedido accepted; cuando ambos
+//   han confirmado el pedido pasa a completed y el producto se elimina
 export async function PATCH(req: NextRequest) {
   const adminDb = getAdminDb();
   if (!adminDb) return NextResponse.json({ error: "Firebase not configured" }, { status: 500 });
@@ -222,14 +224,17 @@ export async function PATCH(req: NextRequest) {
   }
 
   const { id, status } = body;
-  if (typeof id !== "string" || !["accepted", "rejected", "cancelled"].includes(status)) {
+  if (typeof id !== "string" || !["accepted", "rejected", "cancelled", "completed"].includes(status)) {
     return NextResponse.json(
-      { error: "id y status ('accepted', 'rejected' o 'cancelled') son obligatorios" },
+      { error: "id y status ('accepted', 'rejected', 'cancelled' o 'completed') son obligatorios" },
       { status: 400 },
     );
   }
 
   const orderRef = adminDb.collection("orders").doc(id);
+
+  // estado en el que queda el pedido (con "completed" puede seguir en "accepted" esperando a la otra parte)
+  let newStatus: string = status;
 
   // transacción: dos aceptaciones simultáneas no pueden reservar el mismo producto
   const failure = await adminDb.runTransaction(async (tx) => {
@@ -242,6 +247,40 @@ export async function PATCH(req: NextRequest) {
       adminDb.collection("products").doc(i.productId),
     );
     const products = await tx.getAll(...productRefs);
+
+    if (status === "completed") {
+      if (!isSeller && !isBuyer) return { code: 403, message: "Forbidden" };
+      if (order.status !== "accepted") {
+        return { code: 409, message: "Solo se puede completar una solicitud aceptada" };
+      }
+
+      const myFlag = isSeller ? "sellerConfirmed" : "buyerConfirmed";
+      const otherConfirmed = isSeller ? order.buyerConfirmed : order.sellerConfirmed;
+
+      // si ya había confirmado no se cambia nada
+      if (order[myFlag]) {
+        newStatus = "accepted";
+        return null;
+      }
+
+      const bothConfirmed = !!otherConfirmed;
+      tx.update(orderRef, {
+        [myFlag]: true,
+        updatedAt: new Date().toISOString(),
+        ...(bothConfirmed ? { status: "completed" } : {}),
+        ...(isSeller ? { unreadBuyer: true } : { unreadSeller: true }),
+      });
+
+      // el producto se vendió: se elimina para que no vuelva al market
+      if (bothConfirmed) {
+        products.forEach((snap) => {
+          if (snap.data()?.reservedOrderId === id) tx.delete(snap.ref);
+        });
+      }
+
+      newStatus = bothConfirmed ? "completed" : "accepted";
+      return null;
+    }
 
     if (status === "cancelled") {
       if (!isSeller && !isBuyer) return { code: 403, message: "Forbidden" };
@@ -280,5 +319,5 @@ export async function PATCH(req: NextRequest) {
   });
 
   if (failure) return NextResponse.json({ error: failure.message }, { status: failure.code });
-  return NextResponse.json({ success: true, status });
+  return NextResponse.json({ success: true, status: newStatus });
 }
