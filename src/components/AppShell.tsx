@@ -8,6 +8,7 @@ import {
   ClipboardList,
   Home,
   Info,
+  LogOut,
   Menu,
   PackagePlus,
   Search,
@@ -47,7 +48,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     applyTheme(theme);
   }, []);
 
-  // Close profile dropdown when route changes
   useEffect(() => {
     setIsProfileOpen(false);
   }, [pathname]);
@@ -104,15 +104,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             R
           </Link>
 
-          <div className="hidden min-w-0 flex-col md:flex">
-            <span className="text-xs font-semibold uppercase tracking-wide text-[var(--brand)]">
-              Entrega en
-            </span>
-            <button className="flex items-center gap-1 text-sm font-bold text-[var(--app-text)]">
-              Bogotá, Colombia <span aria-hidden>⌄</span>
-            </button>
-          </div>
-
           <label className="flex h-12 flex-1 items-center gap-3 rounded-full bg-[var(--app-soft)] px-4 text-sm text-[var(--app-muted)] ring-1 ring-transparent transition focus-within:bg-[var(--app-surface)] focus-within:ring-[var(--brand)]/30">
             <Search size={18} />
             <input
@@ -122,7 +113,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             />
           </label>
 
-          {/* Subir producto button */}
           <button
             onClick={() => (user ? setIsCreateProductOpen(true) : router.push("/login"))}
             className="hidden h-11 items-center gap-2 rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-4 text-sm font-bold text-[var(--app-text)] shadow-sm transition hover:bg-[var(--app-soft)] lg:flex"
@@ -144,7 +134,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </Link>
 
-          {/* Auth button */}
           {user ? (
             <div className="relative hidden sm:block">
               <button
@@ -184,7 +173,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
           )}
 
-          {/* Mobile auth button */}
           <div className="sm:hidden">
             {user ? (
               <button
@@ -194,7 +182,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--app-border)] text-sm font-bold shadow-sm transition hover:bg-[var(--app-soft)]"
                 title="Cerrar sesión"
               >
-                ⏻
+                <LogOut size={18} />
               </button>
             ) : (
               <Link
@@ -274,7 +262,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        {/* User section */}
         {user ? (
           <div className="mt-auto border-t border-[var(--app-border)] pt-4">
             <div className="flex items-center gap-3 rounded-2xl bg-[var(--app-soft)] px-4 py-3">
@@ -313,7 +300,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        {/* Config button (always visible) */}
         <div className="mt-2 border-t border-[var(--app-border)] pt-4">
           <Link
             href="/configuracion"
@@ -330,7 +316,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Modal for creating products */}
       {isCreateProductOpen && user && (
         <CreateProductModal
           user={user}

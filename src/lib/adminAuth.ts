@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
 
-/** Verify bearer token and require role === "admin" on the user's doc. Returns UID or an error response. */
 export async function requireAdmin(req: NextRequest): Promise<string | NextResponse> {
   const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -27,7 +26,6 @@ export async function requireAdmin(req: NextRequest): Promise<string | NextRespo
   }
 }
 
-/** Verify bearer token and require role === "socio" on the user's doc. Returns UID or an error response. */
 export async function requireSocio(req: NextRequest): Promise<string | NextResponse> {
   const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -54,7 +52,6 @@ export async function requireSocio(req: NextRequest): Promise<string | NextRespo
   }
 }
 
-/** Verify bearer token and require the user to be admin or the creator of the product. Returns UID or an error response. */
 export async function requireProductEditor(
   req: NextRequest,
   productId: string,

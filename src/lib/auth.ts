@@ -2,9 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  createUserWithEmailAndPassword,
-  updateProfile,
-  signInWithEmailAndPassword,
   signInWithCustomToken,
   signInWithPopup,
   GoogleAuthProvider,
@@ -16,7 +13,6 @@ import { auth } from "./firebase";
 
 export type User = FirebaseUser | null;
 
-/** Persistent hook that returns the current Firebase user. */
 export function useUser(): User {
   const [user, setUser] = useState<User>(null);
 
@@ -29,9 +25,6 @@ export function useUser(): User {
   return user;
 }
 
-// ── Client-side helpers ───────────────────────────────────────────────────
-
-/** Paso 1 del login: valida correo y contraseña y envía el código por correo. */
 export async function requestCodeClient(email: string, password: string): Promise<void> {
   const res = await fetch("/api/auth/2fa/request", {
     method: "POST",
@@ -44,7 +37,6 @@ export async function requestCodeClient(email: string, password: string): Promis
   }
 }
 
-/** Paso 2 del login: valida el código y entra con el custom token. */
 export async function verifyCodeClient(email: string, code: string): Promise<FirebaseUser> {
   if (!auth) throw new Error("Firebase auth not configured");
   const res = await fetch("/api/auth/2fa/verify", {
@@ -109,7 +101,6 @@ export async function logoutClient(): Promise<void> {
   await fbSignOut(auth);
 }
 
-/** Get a fresh ID token string for the given user, or null. */
 export async function getIdToken(user: FirebaseUser | null): Promise<string | null> {
   if (!user) return null;
   return user.getIdToken();

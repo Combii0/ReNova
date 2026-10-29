@@ -35,8 +35,6 @@ function helpyErrorMessage(status: number, code?: string) {
 }
 
 export async function POST(request: NextRequest) {
-  // GEMINI_API_KEY is the current name. GEMMA_API_KEY remains as a temporary
-  // fallback so existing local setups keep working while the Vercel variable is updated.
   const apiKey = process.env.GEMINI_API_KEY ?? process.env.GEMMA_API_KEY;
 
   if (!apiKey) {

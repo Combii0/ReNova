@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import type { Product } from "@/types/products";
 
-/** Fetch products from the /api/products endpoint. */
 async function fetchProducts(): Promise<Product[]> {
   const res = await fetch("/api/products");
   if (!res.ok) return [];

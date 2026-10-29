@@ -54,9 +54,6 @@ async function requireUserId(
   }
 }
 
-// ── PATCH crea o actualiza el perfil (autenticado) ──────────────────────────
-// allowIfNoProfile: el registro crea el perfil antes del primer código
-
 export async function PATCH(req: NextRequest) {
   const adminDb = getAdminDb();
   if (!adminDb) return NextResponse.json({ error: "Firebase not configured" }, { status: 500 });
@@ -137,8 +134,6 @@ export async function PATCH(req: NextRequest) {
   });
 }
 
-// ── GET perfil (autenticado) ─────────────────────────────────────────────────
-
 export async function GET(req: NextRequest) {
   const adminDb = getAdminDb();
   if (!adminDb) return NextResponse.json({ error: "Firebase not configured" }, { status: 500 });
@@ -170,8 +165,6 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json(response);
 }
-
-// ── DELETE elimina la cuenta, sus pedidos (con sus mensajes) y su perfil ─────
 
 export async function DELETE(req: NextRequest) {
   const adminAuth = getAdminAuth();

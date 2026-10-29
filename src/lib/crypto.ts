@@ -1,12 +1,3 @@
-/**
- * Server-side AES-256-GCM encryption helpers for PII fields.
- *
- * MUST ONLY be imported in server code (API routes, server actions).
- * Never import in client components or layout files.
- *
- * Requires SERVER_ENCRYPTION_KEY=<64 hex chars> in .env.local.
- */
-
 import { randomBytes, createCipheriv, createDecipheriv } from "node:crypto";
 
 const ALGO = "aes-256-gcm";
@@ -23,7 +14,6 @@ function getKey(): Buffer {
   return Buffer.from(hex, "hex");
 }
 
-/** Encrypt a string → "<iv_hex>:<tag_hex>:<ciphertext_hex>" */
 export function encrypt(plainText: string): string {
   const key = getKey();
   const iv = randomBytes(12);
@@ -34,7 +24,6 @@ export function encrypt(plainText: string): string {
   return `${iv.toString("hex")}:${tag}:${body}`;
 }
 
-/** Decrypt "<iv_hex>:<tag_hex>:<ciphertext_hex>" → original string */
 export function decrypt(cipherText: string): string {
   const key = getKey();
   const parts = cipherText.split(":");

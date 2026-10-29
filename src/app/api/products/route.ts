@@ -9,9 +9,6 @@ function todayCo() {
   return new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
 }
 
-// ── GET all products (público, admin ve campos decriptados) ────────────────
-// ?mine=1 devuelve solo los productos del usuario autenticado (con campos decriptados)
-
 export async function GET(req: NextRequest) {
   const adminDb = getAdminDb();
   if (!adminDb) return NextResponse.json({ error: "Firebase not configured" }, { status: 500 });
@@ -84,8 +81,6 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json(products);
 }
-
-// ── POST create product (solo socios) ───────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   const adminDb = getAdminDb();
